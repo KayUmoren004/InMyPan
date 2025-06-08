@@ -4,7 +4,8 @@
     "userInterfaceStyle": "automatic",
     "orientation": "default",
     "web": {
-      "output": "static"
+      "output": "static",
+      "bundler": "metro"
     },
     "plugins": [
       [

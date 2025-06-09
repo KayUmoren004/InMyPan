@@ -1,6 +1,6 @@
 {
   "expo": {
-    "scheme": "acme",
+    "scheme": "in-my-pan",
     "userInterfaceStyle": "automatic",
     "orientation": "default",
     "web": {
@@ -13,9 +13,51 @@
         {
           "origin": "https://n"
         }
+      ],
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./src/assets/images/splash-icon-light.png",
+          "dark": {
+            "image": "./src/assets/images/splash-icon-dark.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
+        }
+      ],
+      "expo-apple-authentication",
+      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+        }
       ]
     ],
     "name": "InMyPan",
-    "slug": "InMyPan"
+    "slug": "InMyPan",
+    "extra": {
+      "router": {
+        "origin": "https://n"
+      },
+      "eas": {
+        "projectId": "8c50719d-3a92-4842-a023-1142b2c47574"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.godsonumoren.InMyPan",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "icon": {
+        "dark": "./src/assets/images/ios-dark.png",
+        "light": "./src/assets/images/ios-light.png",
+        "tinted": "./src/assets/images/ios-tinted.png"
+      },
+      "usesAppleSignIn": true
+    }
   }
 }

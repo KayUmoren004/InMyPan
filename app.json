@@ -46,9 +46,9 @@
       ]
     ],
     "name": "InMyPan",
-    "slug": "in-my-pan",
+    "slug": "InMyPan",
     "description": "In My Pan is a social media app that allows you to share your photos and videos of your cooking with your friends and family.",
-    "owner": "Godson Umoren",
+    "owner": "godsonumoren",
     "extra": {
       "router": {
         "origin": "https://n"

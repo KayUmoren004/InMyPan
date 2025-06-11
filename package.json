@@ -46,7 +46,8 @@
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.25.56",
     "expo-image-picker": "~16.1.4",
-    "expo-updates": "~0.28.14"
+    "expo-updates": "~0.28.14",
+    "expo-camera": "~16.1.8"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

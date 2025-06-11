@@ -39,9 +39,17 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you share them with your friends and upload them to your profile.",
-          "cameraPermission": "The app accesses your camera to let you take photos and upload them to your profile.",
-          "microphonePermission": "The app accesses your microphone to let you record audio and upload them to your profile."
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
         }
       ]
     ],
@@ -75,11 +83,15 @@
     },
     "android": {
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
       ],
       "runtimeVersion": {
         "policy": "appVersion"
-      }
+      },
+      "package": "com.godsonumoren.InMyPan"
     }
   }
 }

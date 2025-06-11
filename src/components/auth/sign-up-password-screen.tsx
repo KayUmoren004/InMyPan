@@ -100,8 +100,18 @@ export default function SignUpPasswordScreen() {
   // Image picker
   const pickImage = useCallback(async () => {
     try {
+      const libraryStatus = await getPermission();
+
+      if (libraryStatus !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need permission to access your photo library."
+        );
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images", "livePhotos"],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 1,
@@ -119,8 +129,18 @@ export default function SignUpPasswordScreen() {
   // Capture Image
   const captureImage = useCallback(async () => {
     try {
+      const cameraStatus = await getCameraPermission();
+
+      if (cameraStatus !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need permission to access your camera."
+        );
+        return;
+      }
+
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images", "livePhotos"],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 1,

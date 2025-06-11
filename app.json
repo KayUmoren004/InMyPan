@@ -1,20 +1,22 @@
 {
   "expo": {
     "scheme": "in-my-pan",
-    "userInterfaceStyle": "automatic",
-    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "orientation": "portrait",
     "web": {
       "output": "static",
       "bundler": "metro"
     },
     "plugins": [
+      "expo-apple-authentication",
+      "expo-secure-store",
+      "expo-font",
       [
         "expo-router",
         {
           "origin": "https://n"
         }
       ],
-      "expo-font",
       [
         "expo-splash-screen",
         {
@@ -27,18 +29,26 @@
           "imageWidth": 200
         }
       ],
-      "expo-apple-authentication",
-      "expo-secure-store",
       [
         "expo-secure-store",
         {
           "configureAndroidBackup": true,
           "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends and upload them to your profile.",
+          "cameraPermission": "The app accesses your camera to let you take photos and upload them to your profile.",
+          "microphonePermission": "The app accesses your microphone to let you record audio and upload them to your profile."
+        }
       ]
     ],
     "name": "InMyPan",
-    "slug": "InMyPan",
+    "slug": "in-my-pan",
+    "description": "In My Pan is a social media app that allows you to share your photos and videos of your cooking with your friends and family.",
+    "owner": "Godson Umoren",
     "extra": {
       "router": {
         "origin": "https://n"

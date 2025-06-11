@@ -1,13 +1,16 @@
-import { Text } from "@/components/ui/text";
-import { View } from "react-native";
+import SignUpPasswordScreen from "@/components/auth/sign-up-password-screen";
+import { useKeyboard } from "@/lib/keyboard";
+import { Pressable } from "react-native";
 
 export default function SignUpPassword() {
+  const { dismissKeyboard } = useKeyboard();
+
   return (
-    <View className="flex-1 items-center justify-center">
-      <Text className="text-2xl font-bold">SignUpPassword</Text>
-      <Text className="text-sm text-gray-500">
-        Sign up to get started with InMyPanPassword
-      </Text>
-    </View>
+    <Pressable
+      onPress={dismissKeyboard}
+      className="flex-1 justify-center items-center"
+    >
+      <SignUpPasswordScreen />
+    </Pressable>
   );
 }

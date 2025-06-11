@@ -67,7 +67,19 @@
         "light": "./src/assets/images/ios-light.png",
         "tinted": "./src/assets/images/ios-tinted.png"
       },
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "runtimeVersion": "1.0.0"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8c50719d-3a92-4842-a023-1142b2c47574"
+    },
+    "android": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     }
   }
 }

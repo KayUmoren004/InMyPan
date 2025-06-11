@@ -2,8 +2,6 @@ import { Text } from "@/components/ui/text";
 import { View } from "react-native";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { Separator } from "../ui/separator";
-import { Input } from "../ui/input";
 import { useKeyboard } from "@/lib/keyboard";
 import { AppIcon } from "@/lib/icons/app-icon";
 import {
@@ -15,19 +13,21 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { H1 } from "@/components/ui/typography";
 import { useCallback, useEffect, useState } from "react";
-import { Link, useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAnimationState, MotiView } from "moti";
 import { Easing } from "react-native-reanimated";
-import { AppleSignInButton } from "./apple-sign-in-button";
 import { PasswordInput } from "../ui/password-input";
-import { type LoginSchema, loginSchema } from "@/lib/zod-validation";
+import {
+  type ForgotPasswordNewPasswordSchema,
+  forgotPasswordNewPasswordSchema,
+} from "@/lib/zod-validation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "@/lib/icons/loader";
-import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 
-export default function LoginScreen() {
-  const { signIn } = useEnhancedAuth();
+export default function ForgotPasswordPasswordScreen() {
+  const { replace } = useRouter();
+  const params = useLocalSearchParams<{ email: string; authCode: string }>();
   const { isKeyboardVisible, keyboardHeight } = useKeyboard();
   const { top, bottom } = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
@@ -38,14 +38,15 @@ export default function LoginScreen() {
       setTextHeight(e.nativeEvent.layout.height),
     []
   );
+
   const banner = useAnimationState({
     expanded: { translateY: 0, scale: 1 },
-    collapsed: { translateY: -0.12 * windowHeight, scale: 1 },
+    collapsed: { translateY: -0.1 * windowHeight, scale: 1 },
   });
 
   const cta = useAnimationState({
     resting: { translateY: 0 },
-    raised: { translateY: -(keyboardHeight - bottom) / 2 },
+    raised: { translateY: -(keyboardHeight - bottom) / 2.35 },
   });
 
   useEffect(() => {
@@ -58,21 +59,44 @@ export default function LoginScreen() {
     control,
     handleSubmit,
     formState: { errors, isSubmitting, isValid },
-  } = useForm<LoginSchema>({
+  } = useForm<ForgotPasswordNewPasswordSchema>({
     defaultValues: {
-      email: "",
       password: "",
+      confirmPassword: "",
     },
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(forgotPasswordNewPasswordSchema),
     mode: "onChange",
   });
 
   // Form submission handler
   const onSubmit = useCallback(
-    async (data: LoginSchema) => {
-      await signIn(data.email, data.password);
+    async (data: ForgotPasswordNewPasswordSchema) => {
+      try {
+        console.log(
+          "Resetting password for:",
+          params.email,
+          "with code:",
+          params.authCode
+        );
+
+        // Here you would typically call your API to reset the password
+        // Example: await resetPassword(params.email, params.authCode, data.password);
+
+        Alert.alert(
+          "Password Reset Successful",
+          "Your password has been reset successfully. You can now sign in with your new password.",
+          [
+            {
+              text: "Sign In",
+              onPress: () => replace("/sign-in"),
+            },
+          ]
+        );
+      } catch (error) {
+        Alert.alert("Error", "Failed to reset password. Please try again.");
+      }
     },
-    [signIn]
+    [params.email, params.authCode, replace]
   );
 
   return (
@@ -97,9 +121,9 @@ export default function LoginScreen() {
 
         <View className="w-4/5" onLayout={onTextLayout}>
           <H1 className="text-foreground font-medium tracking-widest leading-relaxed">
-            Share your plate, your way.{" "}
+            Create new password.{" "}
             <H1 className="text-neutral-400 font-medium tracking-widest">
-              Food tastes better when shared.
+              Choose a strong password for your account.
             </H1>
           </H1>
         </View>
@@ -123,48 +147,19 @@ export default function LoginScreen() {
               behavior={Platform.OS === "ios" ? "padding" : undefined}
               className="my-2 items-center gap-2 w-full"
             >
-              {/* Email Input with Controller */}
-              <View className="w-full">
-                <Controller
-                  control={control}
-                  name="email"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                      placeholder="Email"
-                      className="w-full"
-                      keyboardType="email-address"
-                      textContentType="emailAddress"
-                      autoCapitalize="none"
-                      autoComplete="email"
-                      autoCorrect={false}
-                      returnKeyType="next"
-                      value={value}
-                      onChangeText={(text) => onChange(text.trim())}
-                      onBlur={onBlur}
-                    />
-                  )}
-                />
-                {errors.email && (
-                  <Text className="text-red-500 text-sm mt-1 ml-1">
-                    {errors.email.message}
-                  </Text>
-                )}
-              </View>
-
-              {/* Password Input with Controller */}
+              {/* Password Input */}
               <View className="w-full">
                 <Controller
                   control={control}
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <PasswordInput
-                      placeholder="Password"
+                      placeholder="New Password"
                       parentClassName="w-full"
-                      returnKeyType="go"
+                      returnKeyType="next"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
-                      onSubmitEditing={handleSubmit(onSubmit)}
                     />
                   )}
                 />
@@ -175,12 +170,29 @@ export default function LoginScreen() {
                 )}
               </View>
 
-              <Link
-                href="/actions/forgot-password/forgot-password-email"
-                className="self-end"
-              >
-                <Text className="text-primary text-sm">Forgot password?</Text>
-              </Link>
+              {/* Confirm Password Input */}
+              <View className="w-full">
+                <Controller
+                  control={control}
+                  name="confirmPassword"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <PasswordInput
+                      placeholder="Confirm New Password"
+                      parentClassName="w-full"
+                      returnKeyType="go"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onSubmitEditing={handleSubmit(onSubmit)}
+                    />
+                  )}
+                />
+                {errors.confirmPassword && (
+                  <Text className="text-red-500 text-sm mt-1 ml-1">
+                    {errors.confirmPassword.message}
+                  </Text>
+                )}
+              </View>
 
               <Button
                 variant="default"
@@ -192,30 +204,16 @@ export default function LoginScreen() {
                 {isSubmitting && (
                   <Loader className="size-6 mr-2 animate-spin" />
                 )}
-                <Text className="text-foreground">Sign In</Text>
+                <Text className="text-foreground">Reset Password</Text>
               </Button>
             </KeyboardAvoidingView>
           </MotiView>
-
-          <View className="w-full flex-2 gap-4">
-            <View className="w-full flex-row justify-center items-center gap-2">
-              <Separator className="w-1/2" />
-              <Text className="text-center">or</Text>
-              <Separator className="w-1/2" />
-            </View>
-
-            <View className="w-full items-center gap-4">
-              <AppleSignInButton />
-            </View>
-          </View>
         </View>
 
         <View className="my-2 w-full flex-2 justify-end items-center gap-4">
-          <Text className="text-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/sign-up/sign-up-email" className="text-primary">
-              <Text className="text-primary">Sign up</Text>
-            </Link>
+          <Text className="text-center text-sm text-neutral-500 px-4">
+            Make sure your password is at least 8 characters long and includes a
+            mix of letters, numbers, and symbols.
           </Text>
         </View>
       </View>

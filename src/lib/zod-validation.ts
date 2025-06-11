@@ -55,3 +55,46 @@ export const signUpPasswordSchema = z
   });
 
 export type SignUpPasswordSchema = z.infer<typeof signUpPasswordSchema>;
+
+// Complete Profile
+export const completeProfileSchema = z.object({
+  givenName: z.string().min(3, "First name must be at least 3 characters"),
+  familyName: z.string().min(3, "Last name must be at least 3 characters"),
+  profileImage: z.string().min(1, "Profile image is required"),
+});
+
+export type CompleteProfileSchema = z.infer<typeof completeProfileSchema>;
+
+// Forgot Password Check Email (Auth Code)
+export const forgotPasswordCheckEmailSchema = z.object({
+  authCode: z
+    .string()
+    .min(6, "Auth code must be 6 characters")
+    .max(6, "Auth code must be 6 characters"),
+});
+
+export type ForgotPasswordCheckEmailSchema = z.infer<
+  typeof forgotPasswordCheckEmailSchema
+>;
+
+// Forgot Password New Password
+export const forgotPasswordNewPasswordSchema = z
+  .object({
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
+  })
+  .superRefine(({ confirmPassword, password }, ctx) => {
+    if (confirmPassword !== password) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+      });
+    }
+  });
+
+export type ForgotPasswordNewPasswordSchema = z.infer<
+  typeof forgotPasswordNewPasswordSchema
+>;

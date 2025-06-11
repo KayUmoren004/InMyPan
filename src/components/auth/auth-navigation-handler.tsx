@@ -3,9 +3,13 @@ import { usePathname, useRouter } from "expo-router";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 
 const PUBLIC_ROUTES = [
+  "/deep-linking",
   "/sign-in",
   "/sign-up/sign-up-email",
   "/sign-up/sign-up-password",
+  "/actions/forgot-password/forgot-password-email",
+  "/actions/forgot-password/forgot-password-check-email",
+  "/actions/forgot-password/forgot-password-password",
 ];
 const INCOMPLETE_PROFILE_ROUTE = "/actions/complete-profile";
 const HOME_ROUTE = "/home";

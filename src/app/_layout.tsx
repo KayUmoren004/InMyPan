@@ -17,6 +17,7 @@ import { useColorScheme } from "~/lib/use-color-scheme";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthWrapper } from "@/components/auth/auth-wrapper";
 import { AuthNavigationHandler } from "@/components/auth/auth-navigation-handler";
+import { DeepLinkingProvider } from "@/hooks/contexts/use-deep-linking-handler";
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -108,13 +109,15 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
       <SafeAreaProvider>
-        <AuthWrapper>
-          <View className={`flex-1 ${isDarkColorScheme ? "dark" : ""}`}>
-            <Slot />
-            <AuthNavigationHandler />
-          </View>
-          <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-        </AuthWrapper>
+        <DeepLinkingProvider>
+          <AuthWrapper>
+            <View className={`flex-1 ${isDarkColorScheme ? "dark" : ""}`}>
+              <Slot />
+              <AuthNavigationHandler />
+            </View>
+            <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+          </AuthWrapper>
+        </DeepLinkingProvider>
       </SafeAreaProvider>
     </ThemeProvider>
   );

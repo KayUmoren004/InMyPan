@@ -1,35 +1,34 @@
-import { AppIcon } from "@/lib/icons/app-icon";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  View,
-  useWindowDimensions,
-  StyleSheet,
-  Alert,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { H1 } from "@/components/ui/typography";
-import { JSX, useCallback, useEffect, useState } from "react";
-import { Link, useRouter } from "expo-router";
-import AppleSignInButton from "./apple-sign-in-button";
+import { Text } from "@/components/ui/text";
+import { View } from "react-native";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { Input } from "../ui/input";
 import { useKeyboard } from "@/lib/keyboard";
-import * as AppleAuthentication from "expo-apple-authentication";
-
-import { MotiView, useAnimationState } from "moti";
+import { AppIcon } from "@/lib/icons/app-icon";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  useWindowDimensions,
+  Alert,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { H1 } from "@/components/ui/typography";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useRouter } from "expo-router";
+import { useAnimationState, MotiView } from "moti";
 import { Easing } from "react-native-reanimated";
-import { useAuth } from "@/hooks/contexts/firebase/use-auth";
-import { useFirestore } from "@/hooks/contexts/firebase/use-firestore";
+import { AppleSignInButton } from "./apple-sign-in-button";
+import { PasswordInput } from "../ui/password-input";
+import { type LoginSchema, loginSchema } from "@/lib/zod-validation";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader } from "@/lib/icons/loader";
+import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 
 export default function LoginScreen() {
-  const { appleSignIn } = useAuth();
-  const { getDocument } = useFirestore();
+  const { signIn } = useEnhancedAuth();
   const { isKeyboardVisible, keyboardHeight } = useKeyboard();
-  const { push, replace } = useRouter();
   const { top, bottom } = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
 
@@ -39,15 +38,14 @@ export default function LoginScreen() {
       setTextHeight(e.nativeEvent.layout.height),
     []
   );
-
   const banner = useAnimationState({
     expanded: { translateY: 0, scale: 1 },
-    collapsed: { translateY: -0.06 * windowHeight, scale: 1 },
+    collapsed: { translateY: -0.12 * windowHeight, scale: 1 },
   });
 
   const cta = useAnimationState({
     resting: { translateY: 0 },
-    raised: { translateY: -(keyboardHeight - bottom) / 9 },
+    raised: { translateY: -(keyboardHeight - bottom) / 2 },
   });
 
   useEffect(() => {
@@ -55,81 +53,27 @@ export default function LoginScreen() {
     cta.transitionTo(isKeyboardVisible ? "raised" : "resting");
   }, [isKeyboardVisible, keyboardHeight]);
 
-  // Function to handle apple sign in
-  const handleAppleSignIn = async () => {
-    try {
-      const appleCredential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
+  // Form
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid },
+  } = useForm<LoginSchema>({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    resolver: zodResolver(loginSchema),
+    mode: "onChange",
+  });
 
-      if (!appleCredential.identityToken) {
-        Alert.alert("Error", "No identity token");
-        return;
-      }
-
-      const userCredential = await appleSignIn(appleCredential);
-      const userFromCredential = userCredential?.user;
-
-      if (!userFromCredential) {
-        Alert.alert(
-          "Error",
-          "No user credential, you will be navigated to the signup screen",
-          [
-            {
-              text: "Cancel",
-              onPress: () => {},
-              style: "cancel",
-            },
-            {
-              text: "Sign up",
-              onPress: () => {
-                replace("/signup/signup-email");
-              },
-            },
-          ]
-        );
-        return;
-      }
-
-      const { uid } = userFromCredential;
-
-      // Check if the user already exists in the database
-      const user = await getDocument("users", uid);
-
-      console.log("User", user);
-
-      if (!user || user === null || user === undefined) {
-        replace("/signup/signup-email");
-        return;
-      }
-
-      console.log("Navigating to protected");
-
-      replace("/(protected)");
-    } catch (e: any) {
-      console.log("Error @ handleAppleSignIn", e);
-      if (e.code === "ERR_REQUEST_CANCELED") {
-        // handle that the user canceled the sign-in flow
-      } else {
-        // handle other errors
-        if (
-          e.message
-            .trim()
-            .includes("auth/account-exists-with-different-credential")
-        ) {
-          Alert.alert(
-            "Error",
-            "Account already exists with different credential, please sign in with email"
-          );
-        } else {
-          Alert.alert("Error", "Something went wrong");
-        }
-      }
-    }
-  };
+  // Form submission handler
+  const onSubmit = useCallback(
+    async (data: LoginSchema) => {
+      await signIn(data.email, data.password);
+    },
+    [signIn]
+  );
 
   return (
     <View className="flex-1 bg-background w-full">
@@ -161,8 +105,7 @@ export default function LoginScreen() {
         </View>
       </MotiView>
 
-      {/*  Bottom  */}
-
+      {/* Bottom */}
       <View
         className="w-full flex-1 justify-start items-start p-12 gap-12"
         style={{ paddingBottom: bottom }}
@@ -174,45 +117,100 @@ export default function LoginScreen() {
               type: "timing",
               easing: Easing.out(Easing.cubic),
             }}
-            className="w-full"
+            className="w-full flex-1"
           >
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : undefined}
-              className="my-2 items-center gap-4 w-full"
+              className="my-2 items-center gap-2 w-full"
             >
-              <Input placeholder="Email" className="w-full" />
+              {/* Email Input with Controller */}
+              <View className="w-full">
+                <Controller
+                  control={control}
+                  name="email"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      placeholder="Email"
+                      className="w-full"
+                      keyboardType="email-address"
+                      textContentType="emailAddress"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      value={value}
+                      onChangeText={(text) => onChange(text.trim())}
+                      onBlur={onBlur}
+                    />
+                  )}
+                />
+                {errors.email && (
+                  <Text className="text-red-500 text-sm mt-1 ml-1">
+                    {errors.email.message}
+                  </Text>
+                )}
+              </View>
 
-              <Button variant="default" className="w-full" size="lg">
-                <Text className="text-foreground">Continue with Email</Text>
+              {/* Password Input with Controller */}
+              <View className="w-full">
+                <Controller
+                  control={control}
+                  name="password"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <PasswordInput
+                      placeholder="Password"
+                      parentClassName="w-full"
+                      returnKeyType="go"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onSubmitEditing={handleSubmit(onSubmit)}
+                    />
+                  )}
+                />
+                {errors.password && (
+                  <Text className="text-red-500 text-sm mt-1 ml-1">
+                    {errors.password.message}
+                  </Text>
+                )}
+              </View>
+
+              <Link href="/actions/forgot-password" className="self-end">
+                <Text className="text-primary text-sm">Forgot password?</Text>
+              </Link>
+
+              <Button
+                variant="default"
+                className="w-full flex-row items-center justify-center mt-2"
+                size="lg"
+                onPress={handleSubmit(onSubmit)}
+                disabled={isSubmitting || !isValid}
+              >
+                {isSubmitting && (
+                  <Loader className="size-6 mr-2 animate-spin" />
+                )}
+                <Text className="text-foreground">Sign In</Text>
               </Button>
             </KeyboardAvoidingView>
           </MotiView>
 
-          <View className="w-full flex-row justify-center items-center gap-2">
-            <Separator className="w-1/2" />
-            <Text className="text-foreground text-center">or</Text>
-            <Separator className="w-1/2" />
-          </View>
+          <View className="w-full flex-2 gap-4">
+            <View className="w-full flex-row justify-center items-center gap-2">
+              <Separator className="w-1/2" />
+              <Text className="text-center">or</Text>
+              <Separator className="w-1/2" />
+            </View>
 
-          <View className="w-full items-center gap-4">
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={
-                AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-              }
-              buttonStyle={
-                AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-              }
-              cornerRadius={5}
-              style={styles.button}
-              onPress={handleAppleSignIn}
-            />
+            <View className="w-full items-center gap-4">
+              <AppleSignInButton />
+            </View>
           </View>
         </View>
 
         <View className="my-2 w-full flex-2 justify-end items-center gap-4">
           <Text className="text-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="/signup/signup-email" className="text-primary">
+            <Link href="/sign-up/sign-up-email" className="text-primary">
               <Text className="text-primary">Sign up</Text>
             </Link>
           </Text>
@@ -221,15 +219,3 @@ export default function LoginScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  button: {
-    width: "100%",
-    height: 50,
-  },
-});

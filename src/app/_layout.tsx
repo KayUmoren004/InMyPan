@@ -1,17 +1,22 @@
 import "../global.css";
 import { Slot } from "expo-router";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
 
 import {
-  Theme,
+  type Theme,
   ThemeProvider,
   DefaultTheme,
   DarkTheme,
 } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
-import { Platform } from "react-native";
+import { Platform, View } from "react-native";
 import { NAV_THEME } from "~/lib/constants";
 import { useColorScheme } from "~/lib/use-color-scheme";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthWrapper } from "@/components/auth/auth-wrapper";
+import { AuthNavigationHandler } from "@/components/auth/auth-navigation-handler";
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -27,10 +32,55 @@ export {
   ErrorBoundary,
 } from "expo-router";
 
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
   const hasMounted = React.useRef(false);
   const { colorScheme, isDarkColorScheme } = useColorScheme();
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
+
+  const [fontsLoaded, fontError] = useFonts({
+    // Geist Mono variants
+    "GeistMono-Thin": require("../assets/fonts/geist/mono/GeistMono-Thin.otf"),
+    "GeistMono-ThinItalic": require("../assets/fonts/geist/mono/GeistMono-ThinItalic.otf"),
+    "GeistMono-ExtraLight": require("../assets/fonts/geist/mono/GeistMono-ExtraLight.otf"),
+    "GeistMono-ExtraLightItalic": require("../assets/fonts/geist/mono/GeistMono-ExtraLightItalic.otf"),
+    "GeistMono-Light": require("../assets/fonts/geist/mono/GeistMono-Light.otf"),
+    "GeistMono-LightItalic": require("../assets/fonts/geist/mono/GeistMono-LightItalic.otf"),
+    "GeistMono-Regular": require("../assets/fonts/geist/mono/GeistMono-Regular.otf"),
+    "GeistMono-Italic": require("../assets/fonts/geist/mono/GeistMono-Italic.otf"),
+    "GeistMono-Medium": require("../assets/fonts/geist/mono/GeistMono-Medium.otf"),
+    "GeistMono-MediumItalic": require("../assets/fonts/geist/mono/GeistMono-MediumItalic.otf"),
+    "GeistMono-SemiBold": require("../assets/fonts/geist/mono/GeistMono-SemiBold.otf"),
+    "GeistMono-SemiBoldItalic": require("../assets/fonts/geist/mono/GeistMono-SemiBoldItalic.otf"),
+    "GeistMono-Bold": require("../assets/fonts/geist/mono/GeistMono-Bold.otf"),
+    "GeistMono-BoldItalic": require("../assets/fonts/geist/mono/GeistMono-BoldItalic.otf"),
+    "GeistMono-ExtraBold": require("../assets/fonts/geist/mono/GeistMono-ExtraBold.otf"),
+    "GeistMono-ExtraBoldItalic": require("../assets/fonts/geist/mono/GeistMono-ExtraBoldItalic.otf"),
+    "GeistMono-Black": require("../assets/fonts/geist/mono/GeistMono-Black.otf"),
+    "GeistMono-BlackItalic": require("../assets/fonts/geist/mono/GeistMono-BlackItalic.otf"),
+
+    // Geist Sans variants
+    "Geist-Thin": require("../assets/fonts/geist/sans/Geist-Thin.otf"),
+    "Geist-ThinItalic": require("../assets/fonts/geist/sans/Geist-ThinItalic.otf"),
+    "Geist-ExtraLight": require("../assets/fonts/geist/sans/Geist-ExtraLight.otf"),
+    "Geist-ExtraLightItalic": require("../assets/fonts/geist/sans/Geist-ExtraLightItalic.otf"),
+    "Geist-Light": require("../assets/fonts/geist/sans/Geist-Light.otf"),
+    "Geist-LightItalic": require("../assets/fonts/geist/sans/Geist-LightItalic.otf"),
+    "Geist-Regular": require("../assets/fonts/geist/sans/Geist-Regular.otf"),
+    "Geist-RegularItalic": require("../assets/fonts/geist/sans/Geist-RegularItalic.otf"),
+    "Geist-Medium": require("../assets/fonts/geist/sans/Geist-Medium.otf"),
+    "Geist-MediumItalic": require("../assets/fonts/geist/sans/Geist-MediumItalic.otf"),
+    "Geist-SemiBold": require("../assets/fonts/geist/sans/Geist-SemiBold.otf"),
+    "Geist-SemiBoldItalic": require("../assets/fonts/geist/sans/Geist-SemiBoldItalic.otf"),
+    "Geist-Bold": require("../assets/fonts/geist/sans/Geist-Bold.otf"),
+    "Geist-BoldItalic": require("../assets/fonts/geist/sans/Geist-BoldItalic.otf"),
+    "Geist-ExtraBold": require("../assets/fonts/geist/sans/Geist-ExtraBold.otf"),
+    "Geist-ExtraBoldItalic": require("../assets/fonts/geist/sans/Geist-ExtraBoldItalic.otf"),
+    "Geist-Black": require("../assets/fonts/geist/sans/Geist-Black.otf"),
+    "Geist-BlackItalic": require("../assets/fonts/geist/sans/Geist-BlackItalic.otf"),
+  });
 
   useIsomorphicLayoutEffect(() => {
     if (hasMounted.current) {
@@ -45,14 +95,27 @@ export default function RootLayout() {
     hasMounted.current = true;
   }, []);
 
-  if (!isColorSchemeLoaded) {
+  useIsomorphicLayoutEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!isColorSchemeLoaded || (!fontsLoaded && !fontError)) {
     return null;
   }
 
   return (
     <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-      <Slot />
-      <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+      <SafeAreaProvider>
+        <AuthWrapper>
+          <View className={`flex-1 ${isDarkColorScheme ? "dark" : ""}`}>
+            <Slot />
+            <AuthNavigationHandler />
+          </View>
+          <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+        </AuthWrapper>
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }

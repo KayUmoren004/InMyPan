@@ -1,5 +1,5 @@
 import { Text } from "@/components/ui/text";
-import { View, TouchableOpacity, Image } from "react-native";
+import { View, TouchableOpacity, Image, TextInput } from "react-native";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { useKeyboard } from "@/lib/keyboard";
@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { H1 } from "@/components/ui/typography";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAnimationState, MotiView } from "moti";
 import { Easing } from "react-native-reanimated";
@@ -28,9 +28,14 @@ import { User } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ContextMenu } from "@expo/ui/swift-ui";
 import { Button as ExpoUiButton } from "@expo/ui/swift-ui";
+import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+
+const GITHUB_AVATAR_URI =
+  "file:///Users/umoren/Library/Developer/CoreSimulator/Devices/D6B904A6-0B14-4ADE-9A9A-9A383066EF9F/data/Containers/Data/Application/48056BCE-AD4A-48DF-8BBA-BBD1145FBCB2/Library/Caches/ImagePicker/B293D3D2-195D-405A-8FF4-977519000B6A.jpg";
 
 export default function SignUpPasswordScreen() {
-  const { replace } = useRouter();
+  const { signUp } = useEnhancedAuth();
   const params = useLocalSearchParams<{
     email: string;
     givenName: string;
@@ -40,9 +45,11 @@ export default function SignUpPasswordScreen() {
   const { isKeyboardVisible, keyboardHeight } = useKeyboard();
   const { top, bottom } = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
-
   const [textHeight, setTextHeight] = useState(0);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  // Add ref for confirm password input
+  const confirmPasswordInputRef = useRef<TextInput>(null);
 
   const onTextLayout = useCallback(
     (e: { nativeEvent: { layout: { height: number } } }) =>
@@ -55,6 +62,12 @@ export default function SignUpPasswordScreen() {
     collapsed: { translateY: -0.12 * windowHeight, scale: 1 },
   });
 
+  // Add avatar animation state
+  const avatarAnimation = useAnimationState({
+    large: { scale: 1 },
+    small: { scale: 0.4 },
+  });
+
   const cta = useAnimationState({
     resting: { translateY: 0 },
     raised: { translateY: -(keyboardHeight - bottom) / 2 },
@@ -62,6 +75,7 @@ export default function SignUpPasswordScreen() {
 
   useEffect(() => {
     banner.transitionTo(isKeyboardVisible ? "collapsed" : "expanded");
+    avatarAnimation.transitionTo(isKeyboardVisible ? "small" : "large");
     cta.transitionTo(isKeyboardVisible ? "raised" : "resting");
   }, [isKeyboardVisible, keyboardHeight]);
 
@@ -159,29 +173,36 @@ export default function SignUpPasswordScreen() {
   const onSubmit = useCallback(
     async (data: SignUpPasswordSchema) => {
       try {
-        // Here you would typically call your sign-up API
-        console.log("Sign up data:", {
-          email: params.email,
-          givenName: params.givenName,
-          familyName: params.familyName,
-          password: data.password,
-          profileImage,
+        const cred = await signUp(params.email, data.password, {
+          displayName: {
+            givenName: params.givenName,
+            familyName: params.familyName,
+          },
+          provider: "email",
+          ...(profileImage && { photoURL: profileImage }),
         });
-
-        // Add your sign-up logic here
-        // Example: await signUp({ ...params, ...data, profileImage });
-
-        // Navigate to success screen or main app
-        replace("/dashboard");
       } catch (error) {
+        console.log("Error @sign-up-password-screen.tsx", error);
         Alert.alert(
           "Sign Up Error",
           "Failed to create account. Please try again."
         );
       }
     },
-    [params, profileImage, replace]
+    [params, profileImage, signUp]
   );
+
+  const getInitials = useCallback(() => {
+    // if (!params.givenName || !params.familyName) {
+    //   return "U";
+    // }
+
+    // return `${params.givenName.charAt(0)}${params.familyName.charAt(0)}`;
+
+    return "GU";
+  }, [params]);
+
+  const url = `https://api.dicebear.com/7.x/initials/svg?seed=${getInitials()}`;
 
   return (
     <View className="flex-1 bg-background w-full">
@@ -193,24 +214,61 @@ export default function SignUpPasswordScreen() {
           easing: Easing.out(Easing.cubic),
         }}
         className={cn(
-          "bg-neutral-900 w-full flex-1 justify-end items-start p-12 gap-6"
+          "bg-neutral-900 w-full flex-1 justify-end items-start p-12 gap-6",
+          profileImage && "py-6"
         )}
         style={{ paddingTop: top }}
       >
-        <AppIcon
-          size={150}
-          className="absolute left-0"
-          style={{ bottom: textHeight + 48 }}
-        />
+        {!profileImage ? (
+          <>
+            <AppIcon
+              size={150}
+              className="absolute left-0"
+              style={{ bottom: textHeight + 48 }}
+            />
 
-        <View className="w-4/5" onLayout={onTextLayout}>
-          <H1 className="text-foreground font-medium tracking-widest leading-relaxed">
-            Almost there, {params.givenName ?? "You"}.{" "}
-            <H1 className="text-neutral-400 font-medium tracking-widest">
-              Secure your account and add a photo.
-            </H1>
-          </H1>
-        </View>
+            <View className="w-4/5" onLayout={onTextLayout}>
+              <H1 className="text-foreground font-medium tracking-widest leading-relaxed">
+                Almost there, {params.givenName ?? "You"}.{" "}
+                <H1 className="text-neutral-400 font-medium tracking-widest">
+                  Secure your account and add a photo.
+                </H1>
+              </H1>
+            </View>
+          </>
+        ) : (
+          <View className="w-full h-full flex-1 justify-end items-center gap-2 ">
+            <MotiView
+              state={avatarAnimation}
+              transition={{
+                type: "timing",
+                duration: 300,
+                easing: Easing.out(Easing.cubic),
+              }}
+              className="flex-1 items-center justify-center "
+            >
+              <Avatar
+                alt="User's Avatar"
+                className="size-96 rounded-full shadow-lg"
+              >
+                <AvatarImage source={{ uri: profileImage }} />
+                <AvatarFallback>
+                  <Text>{getInitials()}</Text>
+                </AvatarFallback>
+              </Avatar>
+            </MotiView>
+
+            <View className="w-full items-end">
+              <ExpoUiButton
+                systemImage="trash"
+                role="destructive"
+                onPress={() => setProfileImage(null)}
+              >
+                Clear
+              </ExpoUiButton>
+            </View>
+          </View>
+        )}
       </MotiView>
 
       {/* Bottom */}
@@ -232,36 +290,46 @@ export default function SignUpPasswordScreen() {
               className="my-2 items-center gap-2 w-full"
             >
               {/* Profile Photo Upload with Context Menu */}
-              <ContextMenu style={{ alignSelf: "center", marginBottom: 16 }}>
-                <ContextMenu.Items>
-                  <ExpoUiButton systemImage="camera" onPress={captureImage}>
-                    Take Photo
-                  </ExpoUiButton>
-                  <ExpoUiButton
-                    systemImage="photo.on.rectangle"
-                    onPress={pickImage}
-                  >
-                    Choose from Library
-                  </ExpoUiButton>
-                </ContextMenu.Items>
-                <ContextMenu.Trigger>
-                  <TouchableOpacity className="w-24 h-24 rounded-full bg-neutral-100 border-2 border-neutral-300 items-center justify-center">
-                    {profileImage ? (
-                      <Image
-                        source={{ uri: profileImage }}
-                        className="w-full h-full rounded-full"
-                      />
-                    ) : (
-                      <View className="items-center gap-1">
-                        <User size={24} className="text-neutral-500" />
-                        <Text className="text-xs text-neutral-500">
-                          Add Photo
-                        </Text>
-                      </View>
+              {!profileImage && (
+                <ContextMenu style={{ alignSelf: "center", marginBottom: 16 }}>
+                  <ContextMenu.Items>
+                    {profileImage && (
+                      <ExpoUiButton
+                        systemImage="trash"
+                        role="destructive"
+                        onPress={() => setProfileImage(null)}
+                      >
+                        Remove Photo
+                      </ExpoUiButton>
                     )}
-                  </TouchableOpacity>
-                </ContextMenu.Trigger>
-              </ContextMenu>
+                    <ExpoUiButton systemImage="camera" onPress={captureImage}>
+                      Take Photo
+                    </ExpoUiButton>
+                    <ExpoUiButton
+                      systemImage="photo.on.rectangle"
+                      onPress={pickImage}
+                    >
+                      Choose from Library
+                    </ExpoUiButton>
+                  </ContextMenu.Items>
+                  <ContextMenu.Trigger>
+                    <TouchableOpacity className="w-24 h-24 rounded-full bg-neutral-100 border-2 border-neutral-300 items-center justify-center">
+                      <Avatar alt="User's Avatar" className="size-24">
+                        <AvatarImage
+                          source={{
+                            uri: url,
+                          }}
+                        />
+                        <AvatarFallback>
+                          <Text className="text-xs text-center p-1">
+                            Click to add photo
+                          </Text>
+                        </AvatarFallback>
+                      </Avatar>
+                    </TouchableOpacity>
+                  </ContextMenu.Trigger>
+                </ContextMenu>
+              )}
 
               {/* Password Input */}
               <View className="w-full">
@@ -276,6 +344,9 @@ export default function SignUpPasswordScreen() {
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
+                      onSubmitEditing={() =>
+                        confirmPasswordInputRef.current?.focus()
+                      }
                     />
                   )}
                 />
@@ -293,6 +364,7 @@ export default function SignUpPasswordScreen() {
                   name="confirmPassword"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <PasswordInput
+                      ref={confirmPasswordInputRef}
                       placeholder="Confirm Password"
                       parentClassName="w-full"
                       returnKeyType="go"

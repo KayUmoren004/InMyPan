@@ -11,10 +11,11 @@ import {
   Platform,
   useWindowDimensions,
   Alert,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { H1 } from "@/components/ui/typography";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useRouter } from "expo-router";
 import { useAnimationState, MotiView } from "moti";
 import { Easing } from "react-native-reanimated";
@@ -31,6 +32,8 @@ export default function LoginScreen() {
   const { isKeyboardVisible, keyboardHeight } = useKeyboard();
   const { top, bottom } = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
+  const passwordInputRef = useRef<TextInput>(null);
+  const { replace } = useRouter();
 
   const [textHeight, setTextHeight] = useState(0);
   const onTextLayout = useCallback(
@@ -70,9 +73,18 @@ export default function LoginScreen() {
   // Form submission handler
   const onSubmit = useCallback(
     async (data: LoginSchema) => {
-      await signIn(data.email, data.password);
+      try {
+        const cred = await signIn(data.email, data.password);
+
+        if (cred) {
+          replace("/home");
+        }
+      } catch (error) {
+        console.log("Error @login-screen.tsx", error);
+        Alert.alert("Error", "Invalid email or password");
+      }
     },
-    [signIn]
+    [signIn, replace]
   );
 
   return (
@@ -141,6 +153,7 @@ export default function LoginScreen() {
                       value={value}
                       onChangeText={(text) => onChange(text.trim())}
                       onBlur={onBlur}
+                      onSubmitEditing={() => passwordInputRef.current?.focus()}
                     />
                   )}
                 />
@@ -158,6 +171,7 @@ export default function LoginScreen() {
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <PasswordInput
+                      ref={passwordInputRef}
                       placeholder="Password"
                       parentClassName="w-full"
                       returnKeyType="go"

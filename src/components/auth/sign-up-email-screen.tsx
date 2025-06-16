@@ -9,10 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { H1 } from "@/components/ui/typography";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Link, useRouter } from "expo-router";
 import { useAnimationState, MotiView } from "moti";
 import { Easing } from "react-native-reanimated";
@@ -29,6 +30,10 @@ export default function SignUpEmailScreen() {
   const { isKeyboardVisible, keyboardHeight } = useKeyboard();
   const { top, bottom } = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
+
+  // Add refs for text inputs
+  const lastNameInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
 
   const [textHeight, setTextHeight] = useState(0);
   const onTextLayout = useCallback(
@@ -148,6 +153,7 @@ export default function SignUpEmailScreen() {
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
+                      onSubmitEditing={() => lastNameInputRef.current?.focus()}
                     />
                   )}
                 />
@@ -165,6 +171,7 @@ export default function SignUpEmailScreen() {
                   name="familyName"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
+                      ref={lastNameInputRef}
                       placeholder="Last Name"
                       className="w-full"
                       textContentType="familyName"
@@ -175,6 +182,7 @@ export default function SignUpEmailScreen() {
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
+                      onSubmitEditing={() => emailInputRef.current?.focus()}
                     />
                   )}
                 />
@@ -192,6 +200,7 @@ export default function SignUpEmailScreen() {
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
+                      ref={emailInputRef}
                       placeholder="Email"
                       className="w-full"
                       keyboardType="email-address"

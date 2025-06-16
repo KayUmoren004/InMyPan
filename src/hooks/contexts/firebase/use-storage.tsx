@@ -10,7 +10,7 @@ import { createContext, useContext, useMemo } from "react";
 import { storage } from "@/lib/firebase-config";
 
 interface StorageContextType {
-  uploadFile: (path: string, file: File) => Promise<string>;
+  uploadFile: (path: string, file: any) => Promise<string>;
   getFileUrl: (path: string) => Promise<string>;
   deleteFile: (path: string) => Promise<void>;
   listFiles: (path: string) => Promise<string[]>;
@@ -25,7 +25,7 @@ export const StorageProvider = ({
 }) => {
   const values = useMemo(
     () => ({
-      uploadFile: async (path: string, file: File): Promise<string> => {
+      uploadFile: async (path: string, file: any): Promise<string> => {
         const storageRef = ref(storage, path);
         await uploadBytes(storageRef, file);
         return getDownloadURL(storageRef);

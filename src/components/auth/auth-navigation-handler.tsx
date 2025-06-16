@@ -29,6 +29,8 @@ export function AuthNavigationHandler() {
   useEffect(() => {
     if (loading || hasNavigated.current) return;
 
+    console.log("Auth User", authUser);
+
     if (!authUser && !PUBLIC_ROUTES.includes(pathname)) {
       console.log("No user, redirect to sign-in");
       hasNavigated.current = true;

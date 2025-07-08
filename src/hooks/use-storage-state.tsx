@@ -46,7 +46,8 @@ export function useStorageState(key: string): UseStateHook<any> {
     if (Platform.OS === "web") {
       try {
         if (typeof localStorage !== "undefined") {
-          setState(localStorage.getItem(key));
+          const value = localStorage.getItem(key);
+          setState(value !== null ? JSON.parse(value) : null);
         }
       } catch (e) {
         safeLog("error", "Local storage is unavailable");

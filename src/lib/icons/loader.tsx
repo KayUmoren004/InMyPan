@@ -1,5 +1,5 @@
 import { Loader } from "lucide-react-native";
 import { iconWithClassName } from "../icon-with-class-name";
 
-iconWithClassName(Loader);
-export { Loader as Loader };
+const WrappedLoader = iconWithClassName(Loader);
+export { WrappedLoader as Loader };

@@ -1,6 +1,7 @@
 import { createContext, useContext, useCallback, ReactNode } from "react";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
+import { safeLog } from "@/lib/utils";
 
 interface DeepLinkingContextValue {
   handleDeepLink: (url: string) => void;
@@ -26,10 +27,8 @@ export function DeepLinkingProvider({ children }: DeepLinkingProviderProps) {
   const handleDeepLink = useCallback((url: string) => {
     const { hostname, path, queryParams, scheme } = Linking.parse(url);
 
-    console.log(
-      `Deep link received - scheme: ${scheme}, hostname: ${hostname}, path: ${path}, params:`,
-      queryParams
-    );
+    safeLog("log", "Deep linking handler initialized");
+    safeLog("log", "Processing deep link");
 
     // Add deep linking logic here
 
@@ -39,10 +38,10 @@ export function DeepLinkingProvider({ children }: DeepLinkingProviderProps) {
       queryParams &&
       Object.keys(queryParams).length > 0
     ) {
-      console.log("QUERY PARAMS", queryParams);
+      safeLog("log", "No query parameters found");
       const mode = queryParams?.mode;
       if (mode) {
-        console.log("mode", mode);
+        safeLog("log", "mode", mode);
         replace({
           pathname:
             DEEP_LINKING_ROUTES[mode as keyof typeof DEEP_LINKING_ROUTES],
@@ -52,7 +51,7 @@ export function DeepLinkingProvider({ children }: DeepLinkingProviderProps) {
         });
       } else replace("/");
     } else {
-      console.log("NO QUERY PARAMS");
+      safeLog("log", "No query parameters found");
       replace("/");
     }
   }, []);

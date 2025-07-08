@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
+import { safeLog } from "@/lib/utils";
 
 const PUBLIC_ROUTES = [
   "/deep-linking",
@@ -38,9 +39,9 @@ export function AuthNavigationHandler() {
     // Wait for both loading and initializing to complete
     if (loading) return;
 
-    console.log("Auth User @ Auth Navigation Handler", authUser);
-    console.log("Current pathname:", pathname);
-    console.log("Has navigated:", hasNavigated.current);
+    safeLog("log", "Auth navigation handler initialized");
+    safeLog("log", "Checking navigation path");
+    safeLog("log", "Navigation state check");
 
     // Create a unique key for the current auth state
     const currentAuthState = authUser
@@ -54,7 +55,7 @@ export function AuthNavigationHandler() {
 
     // No user and not on a public route
     if (!authUser && !PUBLIC_ROUTES.includes(pathname)) {
-      console.log("No user, redirect to sign-in");
+      safeLog("log", "Redirecting to sign-in");
       hasNavigated.current = true;
       lastAuthState.current = currentAuthState;
       router.replace("/sign-in");
@@ -67,7 +68,7 @@ export function AuthNavigationHandler() {
       !hasCompleteName(authUser) &&
       pathname !== INCOMPLETE_PROFILE_ROUTE
     ) {
-      console.log("Incomplete profile, redirecting...");
+      safeLog("log", "Redirecting to complete profile");
       hasNavigated.current = true;
       lastAuthState.current = currentAuthState;
       router.replace(INCOMPLETE_PROFILE_ROUTE);
@@ -76,7 +77,7 @@ export function AuthNavigationHandler() {
 
     // User exists, complete profile, but on auth route
     if (authUser && hasCompleteName(authUser) && isAuthRoute(pathname)) {
-      console.log("Logged in user on auth route, redirecting to home");
+      safeLog("log", "Redirecting authenticated user to home");
       hasNavigated.current = true;
       lastAuthState.current = currentAuthState;
       router.replace(HOME_ROUTE);

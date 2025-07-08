@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { OAuthProvider, linkWithCredential } from "firebase/auth";
 import { useEnhancedAuth } from "./use-enhanced-auth";
+import { safeLog } from "@/lib/utils";
 
 export const useAppleAccountLinking = () => {
   const { authUser, updateProfile } = useEnhancedAuth();
@@ -44,7 +45,7 @@ export const useAppleAccountLinking = () => {
       Alert.alert("Success", "Apple account linked successfully!");
       return true;
     } catch (error: any) {
-      console.error("Apple account linking error:", error);
+      safeLog("error", "Apple account linking error");
 
       if (error.code === "ERR_REQUEST_CANCELED") {
         // User cancelled - no error needed

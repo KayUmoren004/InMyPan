@@ -26,6 +26,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "@/lib/icons/loader";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
+import { safeLog } from "@/lib/utils";
 
 export default function LoginScreen() {
   const { signIn } = useEnhancedAuth();
@@ -80,7 +81,7 @@ export default function LoginScreen() {
           replace("/home");
         }
       } catch (error) {
-        console.log("Error @login-screen.tsx", error);
+        safeLog("error", "Login error");
         Alert.alert("Error", "Invalid email or password");
       }
     },

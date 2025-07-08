@@ -3,6 +3,7 @@ import { StyleSheet } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 import { useRouter } from "expo-router";
+import { safeLog } from "@/lib/utils";
 
 export const AppleSignInButton = () => {
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,7 @@ export const AppleSignInButton = () => {
         replace("/home");
       }
     } catch (error) {
-      console.error("Apple Sign-In failed:", error);
+      safeLog("error", "Apple Sign-In failed");
     } finally {
       setLoading(false);
     }

@@ -56,6 +56,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { type Firestore, getFirestore } from "firebase/firestore";
 import { type FirebaseStorage, getStorage } from "firebase/storage";
 import { type Database, getDatabase } from "firebase/database";
+import { safeLog } from "@/lib/utils";
 
 export const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -81,7 +82,7 @@ const auth: Auth = (() => {
     // If auth is already initialized, this will throw an error
     // In that case, we need to get the existing auth instance
     // But this should not happen with proper app lifecycle management
-    console.warn("Auth already initialized:", error.message);
+    safeLog("warn", "Auth already initialized");
 
     // Import getAuth only if needed as fallback
     const { getAuth } = require("firebase/auth");

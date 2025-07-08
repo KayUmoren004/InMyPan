@@ -30,6 +30,7 @@ import { ContextMenu } from "@expo/ui/swift-ui";
 import { Button as ExpoUiButton } from "@expo/ui/swift-ui";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { safeLog } from "@/lib/utils";
 
 export default function SignUpPasswordScreen() {
   const { signUp } = useEnhancedAuth();
@@ -132,7 +133,7 @@ export default function SignUpPasswordScreen() {
         setProfileImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.log("Error picking image:", error);
+      safeLog("error", "Error picking profile image");
       Alert.alert("Error", "Failed to select image. Please try again.");
     }
   }, []);
@@ -161,7 +162,7 @@ export default function SignUpPasswordScreen() {
         setProfileImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.log("Error capturing image:", error);
+      safeLog("error", "Error capturing profile image");
       Alert.alert("Error", "Failed to capture image. Please try again.");
     }
   }, []);
@@ -179,7 +180,7 @@ export default function SignUpPasswordScreen() {
           ...(profileImage && { photoURL: profileImage }),
         });
       } catch (error) {
-        console.log("Error @sign-up-password-screen.tsx", error);
+        safeLog("error", "Error during sign up");
         Alert.alert(
           "Sign Up Error",
           "Failed to create account. Please try again."

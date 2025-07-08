@@ -23,6 +23,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "@/lib/icons/loader";
+import { safeLog } from "@/lib/utils";
 
 export default function ForgotPasswordEmailScreen() {
   const { push } = useRouter();
@@ -69,7 +70,7 @@ export default function ForgotPasswordEmailScreen() {
   const onSubmit = useCallback(
     async (data: ForgotPasswordSchema) => {
       try {
-        console.log("Forgot password email:", data.email);
+        safeLog("log", "Initiating password reset");
 
         // Here you would typically call your API to send the reset code
         // Example: await sendPasswordResetCode(data.email);
@@ -80,7 +81,7 @@ export default function ForgotPasswordEmailScreen() {
           params: { email: data.email },
         });
       } catch (error) {
-        console.error("Error sending reset code:", error);
+        safeLog("error", "Error sending reset code");
       }
     },
     [push]

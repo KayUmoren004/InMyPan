@@ -30,6 +30,7 @@ import { ContextMenu } from "@expo/ui/swift-ui";
 import { Button as ExpoUiButton } from "@expo/ui/swift-ui";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { safeLog } from "@/lib/utils";
 
 export default function CompleteProfileScreen() {
   const { replace } = useRouter();
@@ -129,7 +130,7 @@ export default function CompleteProfileScreen() {
         });
       }
     } catch (error) {
-      console.log("Error picking image:", error);
+      safeLog("error", "Error picking profile image");
       Alert.alert("Error", "Failed to select image. Please try again.");
     }
   }, [getPermission, setValue]);
@@ -160,7 +161,7 @@ export default function CompleteProfileScreen() {
         });
       }
     } catch (error) {
-      console.log("Error capturing image:", error);
+      safeLog("error", "Error capturing profile image");
       Alert.alert("Error", "Failed to capture image. Please try again.");
     }
   }, [getCameraPermission, setValue]);
@@ -179,7 +180,7 @@ export default function CompleteProfileScreen() {
         // Navigate to main app or dashboard
         replace("/home");
       } catch (error) {
-        console.log("Error completing profile", error);
+        safeLog("error", "Error completing profile");
         Alert.alert(
           "Profile Error",
           "Failed to complete profile. Please try again."

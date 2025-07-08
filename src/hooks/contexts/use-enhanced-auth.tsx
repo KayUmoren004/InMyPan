@@ -30,6 +30,7 @@ import { useStorageState } from "../use-storage-state";
 import { useRouter } from "expo-router";
 import { useStorage } from "./firebase/use-storage";
 import type { CompleteProfileSchema } from "@/lib/zod-validation";
+import { safeLog } from "@/lib/utils";
 
 // Types
 export interface UserProfile {
@@ -106,7 +107,7 @@ export const EnhancedAuthProvider = ({
         const url = await uploadFile(path, image);
         return url;
       } catch (error: any) {
-        console.log("Error @EnhancedAuth.uploadProfileImage: ", error.message);
+        safeLog("error", "Error uploading profile image");
         return null;
       }
     },
@@ -168,12 +169,12 @@ export const EnhancedAuthProvider = ({
                 createdAt: data.createdAt?.toDate() || new Date(),
                 updatedAt: data.updatedAt?.toDate() || new Date(),
               } as UserProfile;
-              console.log("Loaded existing profile from Firestore:", profile);
+              safeLog("log", "Loaded existing profile from Firestore");
             } else if (!skipProfileCreation) {
               profile = await createUserProfile(firebaseUser);
-              console.log("Created new profile:", profile);
+              safeLog("log", "Created new profile");
             } else {
-              console.log("Waiting for profile to be created...");
+              safeLog("log", "Waiting for profile to be created...");
               return;
             }
 
@@ -194,12 +195,12 @@ export const EnhancedAuthProvider = ({
             setLoading(false);
           },
           (error) => {
-            console.error("Error listening to profile changes:", error);
+            safeLog("error", "Error listening to profile changes");
             setLoading(false);
           }
         );
       } catch (error) {
-        console.error("Error syncing user profile:", error);
+        safeLog("error", "Error syncing user profile");
         setLoading(false);
       }
     },
@@ -210,22 +211,22 @@ export const EnhancedAuthProvider = ({
   useEffect(() => {
     // Wait for base auth to finish initializing
     if (baseAuth.initializing) {
-      console.log("Base auth still initializing...");
+      safeLog("log", "Base auth still initializing...");
       return;
     }
 
     // If base auth is still loading user state, wait
     if (baseAuth.loading) {
-      console.log("Base auth still loading...");
+      safeLog("log", "Base auth still loading...");
       return;
     }
 
     const userId = baseAuth.user?.uid || null;
-    console.log("Enhanced auth processing user change:", userId);
+    safeLog("log", "Enhanced auth processing user change");
 
     // If user logged out
     if (!baseAuth.user) {
-      console.log("No Firebase user, cleaning up...");
+      safeLog("log", "No Firebase user, cleaning up...");
       // Clean up listeners
       if (profileUnsubscribe.current) {
         profileUnsubscribe.current();
@@ -240,7 +241,7 @@ export const EnhancedAuthProvider = ({
 
     // If user changed or this is the first time
     if (currentUserId.current !== userId) {
-      console.log("User changed, syncing profile for:", userId);
+      safeLog("log", "User changed, syncing profile for:", userId);
       currentUserId.current = userId;
       syncUserProfile(baseAuth.user);
     }
@@ -255,7 +256,7 @@ export const EnhancedAuthProvider = ({
       !baseAuth.loading &&
       !baseAuth.initializing
     ) {
-      console.log("Clearing stale session");
+      safeLog("log", "Clearing stale session");
       setSessionState(null);
     }
   }, [
@@ -283,7 +284,7 @@ export const EnhancedAuthProvider = ({
             resolve(xhr.response);
           };
           xhr.onerror = (e) => {
-            console.log(e);
+            safeLog("error", "Error in enhanced auth");
             reject(new TypeError("Network request failed"));
           };
           xhr.responseType = "blob";
@@ -377,7 +378,7 @@ export const EnhancedAuthProvider = ({
   );
 
   const logout = useCallback(async (): Promise<void> => {
-    console.log("Logging out user...");
+    safeLog("log", "Logging out user...");
 
     // Clean up listeners
     if (profileUnsubscribe.current) {
@@ -411,7 +412,7 @@ export const EnhancedAuthProvider = ({
           ],
         });
 
-        console.log("Apple credential", appleCredential);
+        safeLog("log", "Apple sign in successful");
 
         if (!appleCredential.identityToken) {
           throw new Error("Apple Sign-In failed: No identity token received");
@@ -444,11 +445,11 @@ export const EnhancedAuthProvider = ({
               provider: "apple.com",
             };
 
-            console.log("Creating Apple profile with data:", appleProfileData);
+            safeLog("log", "Creating Apple profile");
             await createUserProfile(user, appleProfileData);
             await syncUserProfile(user, true);
           } else {
-            console.log("Existing Apple user profile found");
+            safeLog("log", "Existing Apple user profile found");
             await syncUserProfile(user);
           }
 
@@ -485,10 +486,10 @@ export const EnhancedAuthProvider = ({
           throw firebaseError;
         }
       } catch (error: any) {
-        console.error("Apple Sign-In error:", error);
+        safeLog("error", "Apple Sign-In error");
 
         if (error.code === "ERR_REQUEST_CANCELED") {
-          console.log("Apple Sign-In cancelled");
+          safeLog("log", "Apple Sign-In cancelled");
           return null;
         }
 
@@ -506,11 +507,11 @@ export const EnhancedAuthProvider = ({
     }, [auth, firestoreContext, createUserProfile, syncUserProfile]);
 
   const verifyEmail = useCallback(async (): Promise<void> => {
-    console.log("Sending email verification");
+    safeLog("log", "Sending email verification");
     if (!baseAuth.user) {
       throw new Error("No user signed in");
     }
-    console.log("Email verification sent");
+    safeLog("log", "Email verification sent");
     await sendEmailVerification(baseAuth.user);
   }, [baseAuth.user]);
 

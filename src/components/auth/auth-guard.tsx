@@ -6,6 +6,7 @@ import {
   UserProfile,
 } from "@/hooks/contexts/use-enhanced-auth";
 import { View, Text, ActivityIndicator } from "react-native";
+import { safeLog } from "@/lib/utils";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -30,7 +31,7 @@ export const AuthGuard = ({
 
     // 1. Not logged in
     if (requireAuth && !authUser && pathname !== "/sign-in") {
-      console.log("AuthGuard: Unauthenticated, redirecting to /sign-in");
+      safeLog("log", "Unauthenticated, redirecting to sign-in");
       hasNavigatedRef.current = true;
       router.replace("/sign-in");
       return;
@@ -38,7 +39,7 @@ export const AuthGuard = ({
 
     // 2. Already logged in, but on a public page
     if (!requireAuth && authUser && pathname !== "/home") {
-      console.log("AuthGuard: Already authenticated, redirecting to /home");
+      safeLog("log", "Already authenticated, redirecting to home");
       hasNavigatedRef.current = true;
       router.replace("/home");
       return;
@@ -48,9 +49,7 @@ export const AuthGuard = ({
     const incomplete =
       requireCompleteProfile && authUser && !hasCompleteName(authUser);
     if (incomplete && pathname !== "/actions/complete-profile") {
-      console.log(
-        "AuthGuard: Incomplete profile, redirecting to complete-profile"
-      );
+      safeLog("log", "Incomplete profile, redirecting to complete-profile");
       hasNavigatedRef.current = true;
       router.replace("/actions/complete-profile");
       return;

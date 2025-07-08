@@ -20,3 +20,23 @@ export const hasNames = (authUser: UserProfile): boolean => {
 
   return hasGivenName && hasFamilyName;
 };
+
+/**
+ * Safe logging utility that only logs in development mode
+ * @param type - The type of log ('log' | 'error' | 'warn' | 'info')
+ * @param message - The message to log
+ * @param data - Optional data to log (will be stripped in production)
+ */
+export const safeLog = (
+  type: "log" | "error" | "warn" | "info",
+  message: string,
+  data?: unknown
+) => {
+  if (__DEV__) {
+    if (data) {
+      console[type](message, data);
+    } else {
+      console[type](message);
+    }
+  }
+};

@@ -25,6 +25,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "@/lib/icons/loader";
 import * as Linking from "expo-linking";
+import { safeLog } from "@/lib/utils";
 
 type ForgotPasswordCheckEmailParams = {
   mode: "resetPassword";
@@ -45,10 +46,8 @@ export default function ForgotPasswordCheckEmailScreen() {
   const { mode, oobCode, apiKey, continueUrl } =
     useLocalSearchParams<ForgotPasswordCheckEmailParams>();
 
-  console.log("MODE", mode);
-  console.log("OOB CODE", oobCode);
-  console.log("API KEY", apiKey);
-  console.log("CONTINUE URL", continueUrl);
+  safeLog("log", "Processing password reset request");
+  safeLog("log", "Resending verification code");
 
   const [textHeight, setTextHeight] = useState(0);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -104,7 +103,8 @@ export default function ForgotPasswordCheckEmailScreen() {
     if (url) {
       const { hostname, path, queryParams } = Linking.parse(url);
 
-      console.log(
+      safeLog(
+        "log",
         `Linked to app with hostname: ${hostname}, path: ${path} and data: ${JSON.stringify(
           queryParams
         )}`
@@ -120,7 +120,7 @@ export default function ForgotPasswordCheckEmailScreen() {
   // Resend code handler
   const handleResendCode = useCallback(async () => {
     try {
-      console.log("Resending code to:", params.email);
+      safeLog("log", `Resending code to: ${params.email}`);
 
       // Here you would typically call your API to resend the code
       // Example: await resendPasswordResetCode(params.email);
@@ -139,11 +139,9 @@ export default function ForgotPasswordCheckEmailScreen() {
   const onSubmit = useCallback(
     async (data: ForgotPasswordCheckEmailSchema) => {
       try {
-        console.log(
-          "Verifying auth code:",
-          data.authCode,
-          "for email:",
-          params.email
+        safeLog(
+          "log",
+          `Verifying auth code: ${data.authCode}, for email: ${params.email}`
         );
 
         // Here you would typically call your API to verify the code

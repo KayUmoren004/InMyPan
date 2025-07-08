@@ -1,21 +1,97 @@
 {
   "expo": {
-    "scheme": "acme",
-    "userInterfaceStyle": "automatic",
-    "orientation": "default",
+    "scheme": "in-my-pan",
+    "userInterfaceStyle": "dark",
+    "orientation": "portrait",
     "web": {
       "output": "static",
       "bundler": "metro"
     },
     "plugins": [
+      "expo-apple-authentication",
+      "expo-secure-store",
+      "expo-font",
       [
         "expo-router",
         {
           "origin": "https://n"
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./src/assets/images/splash-icon-light.png",
+          "dark": {
+            "image": "./src/assets/images/splash-icon-dark.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to access your Face ID biometric data."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": true
+        }
       ]
     ],
     "name": "InMyPan",
-    "slug": "InMyPan"
+    "slug": "InMyPan",
+    "description": "In My Pan is a social media app that allows you to share your photos and videos of your cooking with your friends and family.",
+    "owner": "godsonumoren",
+    "extra": {
+      "router": {
+        "origin": "https://n"
+      },
+      "eas": {
+        "projectId": "8c50719d-3a92-4842-a023-1142b2c47574"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.godsonumoren.InMyPan",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "icon": {
+        "dark": "./src/assets/images/ios-dark.png",
+        "light": "./src/assets/images/ios-light.png",
+        "tinted": "./src/assets/images/ios-tinted.png"
+      },
+      "usesAppleSignIn": true,
+      "runtimeVersion": "1.0.0"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8c50719d-3a92-4842-a023-1142b2c47574"
+    },
+    "android": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      },
+      "package": "com.godsonumoren.InMyPan"
+    }
   }
 }

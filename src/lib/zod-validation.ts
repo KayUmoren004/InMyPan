@@ -1,0 +1,88 @@
+import * as z from "zod";
+
+// Login
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+
+});
+
+export type LoginSchema = z.infer<typeof loginSchema>;
+
+// Forgot Password
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export type ForgotPasswordSchema = z.infer<typeof forgotPasswordSchema>;
+
+// Sign Up Email
+export const signUpEmailSchema = z.object({
+  email: z.string().email(),
+  givenName: z.string().min(3, "First name must be at least 3 characters"),
+  familyName: z.string().min(3, "Last name must be at least 3 characters"),
+});
+
+export type SignUpEmailSchema = z.infer<typeof signUpEmailSchema>;
+
+// Sign Up Password
+export const signUpPasswordSchema = z
+  .object({
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
+  })
+  .superRefine(({ confirmPassword, password }, ctx) => {
+    if (confirmPassword !== password) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+      });
+    }
+  });
+
+export type SignUpPasswordSchema = z.infer<typeof signUpPasswordSchema>;
+
+// Complete Profile
+export const completeProfileSchema = z.object({
+  givenName: z.string().min(3, "First name must be at least 3 characters"),
+  familyName: z.string().min(3, "Last name must be at least 3 characters"),
+  profileImage: z.string().nullable(),
+});
+
+export type CompleteProfileSchema = z.infer<typeof completeProfileSchema>;
+
+// Forgot Password Check Email (Auth Code)
+export const forgotPasswordCheckEmailSchema = z.object({
+  authCode: z
+    .string()
+    .length(6, "Auth code must be 6 characters"),
+});
+
+export type ForgotPasswordCheckEmailSchema = z.infer<
+  typeof forgotPasswordCheckEmailSchema
+>;
+
+// Forgot Password New Password
+export const forgotPasswordNewPasswordSchema = z
+  .object({
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters"),
+  })
+  .superRefine(({ confirmPassword, password }, ctx) => {
+    if (confirmPassword !== password) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Passwords do not match",
+        path: ["confirmPassword"],
+      });
+    }
+  });
+
+export type ForgotPasswordNewPasswordSchema = z.infer<
+  typeof forgotPasswordNewPasswordSchema
+>;

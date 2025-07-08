@@ -31,9 +31,6 @@ import { Button as ExpoUiButton } from "@expo/ui/swift-ui";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
-const GITHUB_AVATAR_URI =
-  "file:///Users/umoren/Library/Developer/CoreSimulator/Devices/D6B904A6-0B14-4ADE-9A9A-9A383066EF9F/data/Containers/Data/Application/48056BCE-AD4A-48DF-8BBA-BBD1145FBCB2/Library/Caches/ImagePicker/B293D3D2-195D-405A-8FF4-977519000B6A.jpg";
-
 export default function SignUpPasswordScreen() {
   const { signUp } = useEnhancedAuth();
   const params = useLocalSearchParams<{
@@ -45,6 +42,7 @@ export default function SignUpPasswordScreen() {
   const { isKeyboardVisible, keyboardHeight } = useKeyboard();
   const { top, bottom } = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
+
   const [textHeight, setTextHeight] = useState(0);
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
@@ -62,7 +60,6 @@ export default function SignUpPasswordScreen() {
     collapsed: { translateY: -0.12 * windowHeight, scale: 1 },
   });
 
-  // Add avatar animation state
   const avatarAnimation = useAnimationState({
     large: { scale: 1 },
     small: { scale: 0.4 },
@@ -70,7 +67,7 @@ export default function SignUpPasswordScreen() {
 
   const cta = useAnimationState({
     resting: { translateY: 0 },
-    raised: { translateY: -(keyboardHeight - bottom) / 2 },
+    raised: { translateY: -(keyboardHeight - bottom) / 2.5 },
   });
 
   useEffect(() => {

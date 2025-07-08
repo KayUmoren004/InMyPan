@@ -28,12 +28,15 @@ import { User } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { ContextMenu } from "@expo/ui/swift-ui";
 import { Button as ExpoUiButton } from "@expo/ui/swift-ui";
+import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export default function CompleteProfileScreen() {
   const { replace } = useRouter();
   const { isKeyboardVisible, keyboardHeight } = useKeyboard();
   const { top, bottom } = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
+  const { completeProfile } = useEnhancedAuth();
 
   const [textHeight, setTextHeight] = useState(0);
 
@@ -48,13 +51,19 @@ export default function CompleteProfileScreen() {
     collapsed: { translateY: -0.12 * windowHeight, scale: 1 },
   });
 
+  const avatarAnimation = useAnimationState({
+    large: { scale: 1 },
+    small: { scale: 0.4 },
+  });
+
   const cta = useAnimationState({
     resting: { translateY: 0 },
-    raised: { translateY: -(keyboardHeight - bottom) / 2 },
+    raised: { translateY: -(keyboardHeight - bottom) / 2.5 },
   });
 
   useEffect(() => {
     banner.transitionTo(isKeyboardVisible ? "collapsed" : "expanded");
+    avatarAnimation.transitionTo(isKeyboardVisible ? "small" : "large");
     cta.transitionTo(isKeyboardVisible ? "raised" : "resting");
   }, [isKeyboardVisible, keyboardHeight]);
 
@@ -69,7 +78,7 @@ export default function CompleteProfileScreen() {
     defaultValues: {
       givenName: "",
       familyName: "",
-      profileImage: "",
+      profileImage: null,
     },
     resolver: zodResolver(completeProfileSchema),
     mode: "onChange",
@@ -81,6 +90,7 @@ export default function CompleteProfileScreen() {
     if (Platform.OS !== "web") {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
+
       return status;
     }
   }, []);
@@ -88,6 +98,7 @@ export default function CompleteProfileScreen() {
   const getCameraPermission = useCallback(async () => {
     if (Platform.OS !== "web") {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
       return status;
     }
   }, []);
@@ -163,14 +174,12 @@ export default function CompleteProfileScreen() {
   const onSubmit = useCallback(
     async (data: CompleteProfileSchema) => {
       try {
-        console.log("Complete profile data:", data);
-
-        // Here you would typically call your API to update the user profile
-        // Example: await updateUserProfile(data);
+        await completeProfile(data);
 
         // Navigate to main app or dashboard
-        replace("/dashboard");
+        replace("/home");
       } catch (error) {
+        console.log("Error completing profile", error);
         Alert.alert(
           "Profile Error",
           "Failed to complete profile. Please try again."
@@ -179,6 +188,18 @@ export default function CompleteProfileScreen() {
     },
     [replace]
   );
+
+  const getInitials = useCallback(() => {
+    // if (!params.givenName || !params.familyName) {
+    //   return "U";
+    // }
+
+    // return `${params.givenName.charAt(0)}${params.familyName.charAt(0)}`;
+
+    return "U";
+  }, []);
+
+  const url = `https://api.dicebear.com/7.x/initials/svg?seed=${getInitials()}`;
 
   return (
     <View className="flex-1 bg-background w-full">
@@ -190,24 +211,61 @@ export default function CompleteProfileScreen() {
           easing: Easing.out(Easing.cubic),
         }}
         className={cn(
-          "bg-neutral-900 w-full flex-1 justify-end items-start p-12 gap-6"
+          "bg-neutral-900 w-full flex-1 justify-end items-start p-12 gap-6",
+          profileImage && "py-6"
         )}
         style={{ paddingTop: top }}
       >
-        <AppIcon
-          size={150}
-          className="absolute left-0"
-          style={{ bottom: textHeight + 48 }}
-        />
+        {!profileImage ? (
+          <>
+            <AppIcon
+              size={150}
+              className="absolute left-0"
+              style={{ bottom: textHeight + 48 }}
+            />
 
-        <View className="w-4/5" onLayout={onTextLayout}>
-          <H1 className="text-foreground font-medium tracking-widest leading-relaxed">
-            Let's get to know you.{" "}
-            <H1 className="text-neutral-400 font-medium tracking-widest">
-              Complete your profile to get started.
-            </H1>
-          </H1>
-        </View>
+            <View className="w-4/5" onLayout={onTextLayout}>
+              <H1 className="text-foreground font-medium tracking-widest leading-relaxed">
+                Let's get to know you.{" "}
+                <H1 className="text-neutral-400 font-medium tracking-widest">
+                  Complete your profile to get started.
+                </H1>
+              </H1>
+            </View>
+          </>
+        ) : (
+          <View className="w-full h-full flex-1 justify-end items-center gap-2 ">
+            <MotiView
+              state={avatarAnimation}
+              transition={{
+                type: "timing",
+                duration: 300,
+                easing: Easing.out(Easing.cubic),
+              }}
+              className="flex-1 items-center justify-center "
+            >
+              <Avatar
+                alt="User's Avatar"
+                className="size-96 rounded-full shadow-lg"
+              >
+                <AvatarImage source={{ uri: profileImage }} />
+                <AvatarFallback>
+                  <Text>{getInitials()}</Text>
+                </AvatarFallback>
+              </Avatar>
+            </MotiView>
+
+            <View className="w-full items-end">
+              <ExpoUiButton
+                systemImage="trash"
+                role="destructive"
+                onPress={removeImage}
+              >
+                Clear
+              </ExpoUiButton>
+            </View>
+          </View>
+        )}
       </MotiView>
 
       {/* Bottom */}
@@ -229,9 +287,18 @@ export default function CompleteProfileScreen() {
               className="my-2 items-center gap-2 w-full"
             >
               {/* Profile Photo Upload with Context Menu */}
-              <View className="w-full items-center mb-4">
-                <ContextMenu style={{ alignSelf: "center" }}>
+              {!profileImage && (
+                <ContextMenu style={{ alignSelf: "center", marginBottom: 16 }}>
                   <ContextMenu.Items>
+                    {profileImage && (
+                      <ExpoUiButton
+                        systemImage="trash"
+                        role="destructive"
+                        onPress={removeImage}
+                      >
+                        Remove Photo
+                      </ExpoUiButton>
+                    )}
                     <ExpoUiButton systemImage="camera" onPress={captureImage}>
                       Take Photo
                     </ExpoUiButton>
@@ -241,36 +308,25 @@ export default function CompleteProfileScreen() {
                     >
                       Choose from Library
                     </ExpoUiButton>
-                    {profileImage && (
-                      <ExpoUiButton systemImage="trash" onPress={removeImage}>
-                        Remove Photo
-                      </ExpoUiButton>
-                    )}
                   </ContextMenu.Items>
                   <ContextMenu.Trigger>
-                    <TouchableOpacity className="w-32 h-32 rounded-full bg-neutral-100 border-2 border-neutral-300 items-center justify-center">
-                      {profileImage ? (
-                        <Image
-                          source={{ uri: profileImage }}
-                          className="w-full h-full rounded-full"
+                    <TouchableOpacity className="w-24 h-24 rounded-full bg-neutral-100 border-2 border-neutral-300 items-center justify-center">
+                      <Avatar alt="User's Avatar" className="size-24">
+                        <AvatarImage
+                          source={{
+                            uri: url,
+                          }}
                         />
-                      ) : (
-                        <View className="items-center gap-2">
-                          <User size={32} className="text-neutral-500" />
-                          <Text className="text-sm text-neutral-500 text-center">
-                            Add Profile{"\n"}Photo
+                        <AvatarFallback>
+                          <Text className="text-xs text-center p-1">
+                            Click to add photo
                           </Text>
-                        </View>
-                      )}
+                        </AvatarFallback>
+                      </Avatar>
                     </TouchableOpacity>
                   </ContextMenu.Trigger>
                 </ContextMenu>
-                {errors.profileImage && (
-                  <Text className="text-red-500 text-sm mt-2 text-center">
-                    {errors.profileImage.message}
-                  </Text>
-                )}
-              </View>
+              )}
 
               {/* First Name Input */}
               <View className="w-full">

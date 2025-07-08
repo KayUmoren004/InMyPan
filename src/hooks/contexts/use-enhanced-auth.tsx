@@ -1,3 +1,5 @@
+"use client";
+
 import {
   type Auth,
   type User,
@@ -27,6 +29,7 @@ import { Alert } from "react-native";
 import { useStorageState } from "../use-storage-state";
 import { useRouter } from "expo-router";
 import { useStorage } from "./firebase/use-storage";
+import type { CompleteProfileSchema } from "@/lib/zod-validation";
 
 // Types
 export interface UserProfile {
@@ -44,7 +47,6 @@ export interface UserProfile {
   createdAt: Date;
   updatedAt: Date;
   provider?: string;
-  // Add other profile fields as needed
 }
 
 interface AuthUser extends UserProfile {
@@ -67,6 +69,7 @@ interface EnhancedAuthContextType {
   linkGoogleAccount: (idToken: string) => Promise<UserCredential>;
   signInWithApple: () => Promise<UserCredential | null>;
   verifyEmail: () => Promise<void>;
+  completeProfile: (profile: CompleteProfileSchema) => Promise<void>;
 }
 
 const EnhancedAuthContext = createContext<EnhancedAuthContextType | undefined>(
@@ -87,13 +90,12 @@ export const EnhancedAuthProvider = ({
   const { replace } = useRouter();
   const { uploadFile } = useStorage();
 
-  // Properly destructure useStorageState - it returns [[loading, value], setter]
+  // Session storage
   const [sessionState, setSessionState] = useStorageState("user_session");
   const [sessionLoading, sessionValue] = sessionState;
 
   // Refs for cleanup and tracking
   const profileUnsubscribe = useRef<Unsubscribe | null>(null);
-  const isInitialized = useRef(false);
   const currentUserId = useRef<string | null>(null);
 
   // Upload profile image
@@ -101,9 +103,7 @@ export const EnhancedAuthProvider = ({
     async (image: any, uid: string): Promise<string | null> => {
       try {
         const path = `users/${uid}/profile-image`;
-
         const url = await uploadFile(path, image);
-
         return url;
       } catch (error: any) {
         console.log("Error @EnhancedAuth.uploadProfileImage: ", error.message);
@@ -113,15 +113,13 @@ export const EnhancedAuthProvider = ({
     []
   );
 
-  // Memoize the createUserProfile function
+  // Create user profile
   const createUserProfile = useCallback(
     async (
       firebaseUser: User,
       additionalData?: Partial<UserProfile>
     ): Promise<UserProfile> => {
-      // Pull out photoURL from additionalData
       const { photoURL, ...rest } = additionalData || {};
-
       const profile: UserProfile = {
         id: firebaseUser.uid,
         email: firebaseUser.email!,
@@ -139,16 +137,13 @@ export const EnhancedAuthProvider = ({
         ...rest,
       };
 
-      // console.log("Final profile to be saved:", profile);
-
       await firestoreContext.setDocument("users", firebaseUser.uid, profile);
-
       return profile;
     },
     [firestoreContext]
   );
 
-  // Memoize the syncUserProfile function
+  // Sync user profile
   const syncUserProfile = useCallback(
     async (firebaseUser: User, skipProfileCreation = false) => {
       try {
@@ -160,7 +155,6 @@ export const EnhancedAuthProvider = ({
 
         // Set up real-time profile listener
         const profileRef = doc(firestore, "users", firebaseUser.uid);
-
         profileUnsubscribe.current = onSnapshot(
           profileRef,
           async (docSnap) => {
@@ -174,14 +168,11 @@ export const EnhancedAuthProvider = ({
                 createdAt: data.createdAt?.toDate() || new Date(),
                 updatedAt: data.updatedAt?.toDate() || new Date(),
               } as UserProfile;
-
               console.log("Loaded existing profile from Firestore:", profile);
             } else if (!skipProfileCreation) {
-              // Create new profile if it doesn't exist and we're not skipping creation
               profile = await createUserProfile(firebaseUser);
               console.log("Created new profile:", profile);
             } else {
-              // If we're skipping profile creation and no profile exists, wait for it to be created
               console.log("Waiting for profile to be created...");
               return;
             }
@@ -199,7 +190,6 @@ export const EnhancedAuthProvider = ({
               email: firebaseUser.email,
               lastLogin: new Date().toISOString(),
             };
-
             setSessionState(newSessionData);
             setLoading(false);
           },
@@ -218,21 +208,29 @@ export const EnhancedAuthProvider = ({
 
   // Handle Firebase user changes
   useEffect(() => {
-    // Don't do anything if base auth is still loading
+    // Wait for base auth to finish initializing
+    if (baseAuth.initializing) {
+      console.log("Base auth still initializing...");
+      return;
+    }
+
+    // If base auth is still loading user state, wait
     if (baseAuth.loading) {
+      console.log("Base auth still loading...");
       return;
     }
 
     const userId = baseAuth.user?.uid || null;
+    console.log("Enhanced auth processing user change:", userId);
 
     // If user logged out
     if (!baseAuth.user) {
+      console.log("No Firebase user, cleaning up...");
       // Clean up listeners
       if (profileUnsubscribe.current) {
         profileUnsubscribe.current();
         profileUnsubscribe.current = null;
       }
-
       setAuthUser(null);
       setSessionState(null);
       setLoading(false);
@@ -242,10 +240,11 @@ export const EnhancedAuthProvider = ({
 
     // If user changed or this is the first time
     if (currentUserId.current !== userId) {
+      console.log("User changed, syncing profile for:", userId);
       currentUserId.current = userId;
       syncUserProfile(baseAuth.user);
     }
-  }, [baseAuth.user, baseAuth.loading, syncUserProfile]);
+  }, [baseAuth.user, baseAuth.loading, baseAuth.initializing, syncUserProfile]);
 
   // Handle stale session cleanup - only run when session storage is loaded
   useEffect(() => {
@@ -253,9 +252,10 @@ export const EnhancedAuthProvider = ({
       !sessionLoading &&
       sessionValue &&
       !baseAuth.user &&
-      !baseAuth.loading
+      !baseAuth.loading &&
+      !baseAuth.initializing
     ) {
-      // Session exists in storage but no Firebase user - clear stale session
+      console.log("Clearing stale session");
       setSessionState(null);
     }
   }, [
@@ -263,6 +263,7 @@ export const EnhancedAuthProvider = ({
     sessionValue,
     baseAuth.user,
     baseAuth.loading,
+    baseAuth.initializing,
     setSessionState,
   ]);
 
@@ -273,18 +274,15 @@ export const EnhancedAuthProvider = ({
       profileData?: Partial<UserProfile>
     ): Promise<UserCredential> => {
       const userCredential = await baseAuth.signUp(email, password);
-
-      // Save user to firestore
       await createUserProfile(userCredential.user, profileData);
 
-      // Upload profile image
       if (profileData?.photoURL) {
         const blob = await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.onload = function () {
+          xhr.onload = () => {
             resolve(xhr.response);
           };
-          xhr.onerror = function (e) {
+          xhr.onerror = (e) => {
             console.log(e);
             reject(new TypeError("Network request failed"));
           };
@@ -292,8 +290,8 @@ export const EnhancedAuthProvider = ({
           xhr.open("GET", profileData.photoURL!, true);
           xhr.send(null);
         });
-        const url = await uploadProfileImage(blob, userCredential.user.uid);
 
+        const url = await uploadProfileImage(blob, userCredential.user.uid);
         if (url) {
           await firestoreContext.updateDocument(
             "users",
@@ -306,21 +304,11 @@ export const EnhancedAuthProvider = ({
         }
       }
 
-      // Send email verification
       await sendEmailVerification(userCredential.user);
-
-      // Replace with verify email screen
       replace("/actions/verify/verify-email");
-
       return userCredential;
     },
-    [
-      baseAuth.signUp,
-      createUserProfile,
-      syncUserProfile,
-      uploadProfileImage,
-      firestoreContext,
-    ]
+    [baseAuth.signUp, createUserProfile, uploadProfileImage, firestoreContext]
   );
 
   const signIn = useCallback(
@@ -333,7 +321,6 @@ export const EnhancedAuthProvider = ({
   const signInWithGoogle = useCallback(
     async (idToken: string): Promise<UserCredential> => {
       const credential = GoogleAuthProvider.credential(idToken);
-
       try {
         const userCredential = await signInWithCredential(auth, credential);
         return userCredential;
@@ -361,7 +348,6 @@ export const EnhancedAuthProvider = ({
         credential
       );
 
-      // Update profile with linked provider info
       if (authUser) {
         await firestoreContext.updateDocument("users", authUser.id, {
           provider: "email,google",
@@ -391,6 +377,8 @@ export const EnhancedAuthProvider = ({
   );
 
   const logout = useCallback(async (): Promise<void> => {
+    console.log("Logging out user...");
+
     // Clean up listeners
     if (profileUnsubscribe.current) {
       profileUnsubscribe.current();
@@ -416,7 +404,6 @@ export const EnhancedAuthProvider = ({
   const signInWithApple =
     useCallback(async (): Promise<UserCredential | null> => {
       try {
-        // Request Apple authentication
         const appleCredential = await AppleAuthentication.signInAsync({
           requestedScopes: [
             AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -426,30 +413,25 @@ export const EnhancedAuthProvider = ({
 
         console.log("Apple credential", appleCredential);
 
-        // Validate identity token
         if (!appleCredential.identityToken) {
           throw new Error("Apple Sign-In failed: No identity token received");
         }
 
-        // Create Firebase credential
         const provider = new OAuthProvider("apple.com");
         const credential = provider.credential({
           idToken: appleCredential.identityToken,
         });
 
         try {
-          // Attempt to sign in with Apple credential
           const userCredential = await signInWithCredential(auth, credential);
           const { user } = userCredential;
 
-          // Check if profile already exists
           const existingProfile = await firestoreContext.getDocument(
             "users",
             user.uid
           );
 
           if (!existingProfile) {
-            // Create profile with Apple name data
             const appleProfileData: Partial<UserProfile> = {
               displayName: {
                 givenName: appleCredential.fullName?.givenName || "",
@@ -463,15 +445,10 @@ export const EnhancedAuthProvider = ({
             };
 
             console.log("Creating Apple profile with data:", appleProfileData);
-
-            // Create the profile first
             await createUserProfile(user, appleProfileData);
-
-            // Then set up the listener, but skip automatic profile creation since we just created it
             await syncUserProfile(user, true);
           } else {
             console.log("Existing Apple user profile found");
-            // Just sync the existing profile
             await syncUserProfile(user);
           }
 
@@ -481,7 +458,6 @@ export const EnhancedAuthProvider = ({
           );
           return userCredential;
         } catch (firebaseError: any) {
-          // Handle account linking scenarios
           if (firebaseError.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
             Alert.alert(
               "Account Already Exists",
@@ -502,7 +478,6 @@ export const EnhancedAuthProvider = ({
             return null;
           }
 
-          // Handle other Firebase auth errors
           if (firebaseError.code === AuthErrorCodes.POPUP_CLOSED_BY_USER) {
             return null;
           }
@@ -512,15 +487,12 @@ export const EnhancedAuthProvider = ({
       } catch (error: any) {
         console.error("Apple Sign-In error:", error);
 
-        // Handle Apple authentication cancellation
         if (error.code === "ERR_REQUEST_CANCELED") {
           console.log("Apple Sign-In cancelled");
           return null;
         }
 
-        // Handle other errors
         let errorMessage = "Apple Sign-In failed. Please try again.";
-
         if (error.code === AuthErrorCodes.NETWORK_REQUEST_FAILED) {
           errorMessage =
             "Network error. Please check your connection and try again.";
@@ -533,17 +505,44 @@ export const EnhancedAuthProvider = ({
       }
     }, [auth, firestoreContext, createUserProfile, syncUserProfile]);
 
-  // Verify email
   const verifyEmail = useCallback(async (): Promise<void> => {
     console.log("Sending email verification");
     if (!baseAuth.user) {
       throw new Error("No user signed in");
     }
-
-    // Send email verification
     console.log("Email verification sent");
     await sendEmailVerification(baseAuth.user);
   }, [baseAuth.user]);
+
+  const completeProfile = useCallback(
+    async (profile: CompleteProfileSchema): Promise<void> => {
+      const user = (await baseAuth.getCurrentUser()) ?? baseAuth.user;
+
+      if (!user) {
+        throw new Error("No user signed in");
+      }
+
+      let profileImageUrl: string | null = null;
+
+      if (profile.profileImage) {
+        profileImageUrl = await uploadProfileImage(
+          profile.profileImage,
+          user.uid
+        );
+      }
+
+      await updateProfile({
+        photoURL: profileImageUrl ?? "",
+        displayName: {
+          givenName: profile.givenName,
+          familyName: profile.familyName,
+        },
+      });
+
+      await syncUserProfile(user);
+    },
+    [baseAuth.user, updateProfile, uploadProfileImage, syncUserProfile]
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -556,7 +555,7 @@ export const EnhancedAuthProvider = ({
 
   const value: EnhancedAuthContextType = {
     authUser,
-    loading,
+    loading: loading || baseAuth.initializing, // Include initializing state
     signUp,
     signIn,
     signInWithGoogle,
@@ -566,6 +565,7 @@ export const EnhancedAuthProvider = ({
     linkGoogleAccount,
     signInWithApple,
     verifyEmail,
+    completeProfile,
   };
 
   return (

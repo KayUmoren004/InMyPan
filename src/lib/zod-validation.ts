@@ -60,7 +60,7 @@ export type SignUpPasswordSchema = z.infer<typeof signUpPasswordSchema>;
 export const completeProfileSchema = z.object({
   givenName: z.string().min(3, "First name must be at least 3 characters"),
   familyName: z.string().min(3, "Last name must be at least 3 characters"),
-  profileImage: z.string().min(1, "Profile image is required"),
+  profileImage: z.string().nullable(),
 });
 
 export type CompleteProfileSchema = z.infer<typeof completeProfileSchema>;

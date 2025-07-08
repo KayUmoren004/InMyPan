@@ -1,7 +1,11 @@
+"use client";
+
+import type React from "react";
+
 import {
-  Auth,
-  User,
-  UserCredential,
+  type Auth,
+  type User,
+  type UserCredential,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -9,7 +13,7 @@ import {
   sendPasswordResetEmail,
   signInWithCredential,
   OAuthProvider,
-  Unsubscribe,
+  type Unsubscribe,
 } from "firebase/auth";
 import {
   createContext,
@@ -19,12 +23,13 @@ import {
   useState,
   useRef,
 } from "react";
-import * as AppleAuthentication from "expo-apple-authentication";
+import type * as AppleAuthentication from "expo-apple-authentication";
 import { Alert } from "react-native";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  initializing: boolean; // Add this to track initial auth state loading
   getCurrentUser: () => Promise<User | null>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
   signIn: (email: string, password: string) => Promise<UserCredential>;
@@ -46,13 +51,25 @@ export const AuthProvider = ({
   auth: Auth;
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true); // Track initial load
   const authStateUnsubscribe = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
+    console.log("Setting up Firebase auth state listener");
+
     authStateUnsubscribe.current = onAuthStateChanged(auth, (user) => {
+      console.log(
+        "Firebase auth state changed:",
+        user ? `User: ${user.uid}` : "No user"
+      );
       setUser(user);
       setLoading(false);
+
+      // Only set initializing to false after the first auth state change
+      if (initializing) {
+        setInitializing(false);
+      }
     });
 
     return () => {
@@ -60,15 +77,13 @@ export const AuthProvider = ({
         authStateUnsubscribe.current();
       }
     };
-  }, [auth]);
+  }, [auth, initializing]);
 
   const appleSignIn = async (
     input: AppleAuthentication.AppleAuthenticationCredential
   ) => {
     const { identityToken, fullName, email } = input;
-
     if (!identityToken) {
-      // throw new Error("No identity token");
       Alert.alert("Error", "No identity token");
       return;
     }
@@ -98,6 +113,7 @@ export const AuthProvider = ({
     () => ({
       user,
       loading,
+      initializing,
       getCurrentUser,
       checkAuth,
       signUp: (email: string, password: string) =>
@@ -108,12 +124,13 @@ export const AuthProvider = ({
       resetPassword: (email: string) => sendPasswordResetEmail(auth, email),
       appleSignIn,
     }),
-    [user, loading, auth]
+    [user, loading, initializing, auth]
   );
 
   return (
     <AuthContext.Provider value={values}>
-      {!loading && children}
+      {/* Always render children, but pass initializing state to enhanced auth */}
+      {children}
     </AuthContext.Provider>
   );
 };

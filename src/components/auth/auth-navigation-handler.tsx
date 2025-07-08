@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
@@ -11,6 +13,7 @@ const PUBLIC_ROUTES = [
   "/actions/forgot-password/forgot-password-check-email",
   "/actions/forgot-password/forgot-password-password",
 ];
+
 const INCOMPLETE_PROFILE_ROUTE = "/actions/complete-profile";
 const HOME_ROUTE = "/home";
 
@@ -19,6 +22,7 @@ export function AuthNavigationHandler() {
   const router = useRouter();
   const pathname = usePathname();
   const hasNavigated = useRef(false);
+  const lastAuthState = useRef<string | null>(null);
 
   const hasCompleteName = (user: any) => {
     const given = user.displayName?.givenName?.trim() || "";
@@ -26,36 +30,68 @@ export function AuthNavigationHandler() {
     return given.length > 0 && family.length > 0;
   };
 
+  const isAuthRoute = (path: string) => {
+    return path.startsWith("/(auth)") || PUBLIC_ROUTES.includes(path);
+  };
+
   useEffect(() => {
-    if (loading || hasNavigated.current) return;
+    // Wait for both loading and initializing to complete
+    if (loading) return;
 
-    console.log("Auth User", authUser);
+    console.log("Auth User @ Auth Navigation Handler", authUser);
+    console.log("Current pathname:", pathname);
+    console.log("Has navigated:", hasNavigated.current);
 
+    // Create a unique key for the current auth state
+    const currentAuthState = authUser
+      ? `${authUser.id}-${hasCompleteName(authUser)}`
+      : "no-user";
+
+    // Only proceed if auth state has changed or we haven't navigated for this state
+    if (lastAuthState.current === currentAuthState && hasNavigated.current) {
+      return;
+    }
+
+    // No user and not on a public route
     if (!authUser && !PUBLIC_ROUTES.includes(pathname)) {
       console.log("No user, redirect to sign-in");
       hasNavigated.current = true;
+      lastAuthState.current = currentAuthState;
       router.replace("/sign-in");
-    } else if (
+      return;
+    }
+
+    // User exists but incomplete profile
+    if (
       authUser &&
       !hasCompleteName(authUser) &&
       pathname !== INCOMPLETE_PROFILE_ROUTE
     ) {
       console.log("Incomplete profile, redirecting...");
       hasNavigated.current = true;
+      lastAuthState.current = currentAuthState;
       router.replace(INCOMPLETE_PROFILE_ROUTE);
-    } else if (
-      authUser &&
-      hasCompleteName(authUser) &&
-      pathname.startsWith("/(auth)")
-    ) {
-      console.log("Logged in user in public route, redirecting home");
-      hasNavigated.current = true;
-      router.replace(HOME_ROUTE);
+      return;
     }
-  }, [authUser, loading, pathname]);
 
+    // User exists, complete profile, but on auth route
+    if (authUser && hasCompleteName(authUser) && isAuthRoute(pathname)) {
+      console.log("Logged in user on auth route, redirecting to home");
+      hasNavigated.current = true;
+      lastAuthState.current = currentAuthState;
+      router.replace(HOME_ROUTE);
+      return;
+    }
+
+    // Update the last auth state
+    lastAuthState.current = currentAuthState;
+  }, [authUser, loading, pathname, router]);
+
+  // Reset navigation flag when pathname changes to a non-auth route
   useEffect(() => {
-    hasNavigated.current = false;
+    if (!isAuthRoute(pathname)) {
+      hasNavigated.current = false;
+    }
   }, [pathname]);
 
   return null;

@@ -63,12 +63,12 @@ interface EnhancedAuthContextType {
     profile?: Partial<UserProfile>
   ) => Promise<UserCredential>;
   signIn: (email: string, password: string) => Promise<UserCredential>;
-  signInWithGoogle: (idToken: string) => Promise<UserCredential>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   linkGoogleAccount: (idToken: string) => Promise<UserCredential>;
   signInWithApple: () => Promise<UserCredential | null>;
+  signInWithGoogle: () => Promise<UserCredential | null>;
   verifyEmail: () => Promise<void>;
   completeProfile: (profile: CompleteProfileSchema) => Promise<void>;
 }
@@ -319,23 +319,28 @@ export const EnhancedAuthProvider = ({
     [baseAuth.signIn]
   );
 
-  const signInWithGoogle = useCallback(
-    async (idToken: string): Promise<UserCredential> => {
-      const credential = GoogleAuthProvider.credential(idToken);
-      try {
-        const userCredential = await signInWithCredential(auth, credential);
-        return userCredential;
-      } catch (error: any) {
-        if (error.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
-          throw new Error(
-            "An account with this email already exists. Please sign in with your original method first, then link your Google account."
-          );
-        }
-        throw error;
-      }
-    },
-    [auth]
-  );
+  // const signInWithGoogle = useCallback(
+  //   async (idToken: string): Promise<UserCredential> => {
+  //     const credential = GoogleAuthProvider.credential(idToken);
+  //     try {
+  //       const userCredential = await signInWithCredential(auth, credential);
+  //       return userCredential;
+  //     } catch (error: any) {
+  //       if (error.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
+  //         throw new Error(
+  //           "An account with this email already exists. Please sign in with your original method first, then link your Google account."
+  //         );
+  //       }
+  //       throw error;
+  //     }
+  //   },
+  //   [auth]
+  // );
+  const signInWithGoogle =
+    useCallback(async (): Promise<UserCredential | null> => {
+      console.log("signInWithGoogle");
+      return null;
+    }, []);
 
   const linkGoogleAccount = useCallback(
     async (idToken: string): Promise<UserCredential> => {

@@ -51,6 +51,12 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1:450510448545:web:26fe093f01ae589a02cde0"
+        }
       ]
     ],
     "name": "InMyPan",

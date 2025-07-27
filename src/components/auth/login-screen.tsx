@@ -130,7 +130,7 @@ export default function LoginScreen() {
               type: "timing",
               easing: Easing.out(Easing.cubic),
             }}
-            className="w-full flex-1"
+            className="w-full flex-1 hidden"
           >
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -213,7 +213,7 @@ export default function LoginScreen() {
           </MotiView>
 
           <View className="w-full flex-2 gap-4">
-            <View className="w-full flex-row justify-center items-center gap-2">
+            <View className="w-full flex-row justify-center items-center gap-2 hidden">
               <Separator className="w-1/2" />
               <Text className="text-center">or</Text>
               <Separator className="w-1/2" />

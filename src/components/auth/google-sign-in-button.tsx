@@ -43,7 +43,7 @@ export default function GoogleSignInButton() {
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         safeLog("log", "Google Sign-In play services not available");
       } else {
-        safeLog("error", "Google Sign-In failed");
+        safeLog("error", "Google Sign-In failed", error);
       }
     } finally {
       setLoading(false);
@@ -53,6 +53,8 @@ export default function GoogleSignInButton() {
   GoogleSignin.configure({
     // scopes: ["https://www.googleapis.com/auth/drive.readonly"],
     webClientId: process.env.EXPO_PUBLIC_FIREBASE_WEB_CLIENT_ID || "",
+    iosClientId: process.env.EXPO_PUBLIC_FIREBASE_WEB_CLIENT_ID || "",
+    hostedDomain: "",
   });
 
   return (

@@ -27,6 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "@/lib/icons/loader";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 import { safeLog } from "@/lib/utils";
+import GoogleSignInButton from "./google-sign-in-button";
 
 export default function LoginScreen() {
   const { signIn } = useEnhancedAuth();
@@ -221,6 +222,7 @@ export default function LoginScreen() {
 
             <View className="w-full items-center gap-4">
               <AppleSignInButton />
+              <GoogleSignInButton />
             </View>
           </View>
         </View>

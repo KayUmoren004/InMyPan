@@ -31,6 +31,7 @@ import { useRouter } from "expo-router";
 import { useStorage } from "./firebase/use-storage";
 import type { CompleteProfileSchema } from "@/lib/zod-validation";
 import { safeLog } from "@/lib/utils";
+import type { User as GoogleUser } from "@react-native-google-signin/google-signin";
 
 // Types
 export interface UserProfile {
@@ -68,7 +69,10 @@ interface EnhancedAuthContextType {
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   linkGoogleAccount: (idToken: string) => Promise<UserCredential>;
   signInWithApple: () => Promise<UserCredential | null>;
-  signInWithGoogle: () => Promise<UserCredential | null>;
+  signInWithGoogle: (
+    idToken: string,
+    user: GoogleUser
+  ) => Promise<UserCredential | null>;
   verifyEmail: () => Promise<void>;
   completeProfile: (profile: CompleteProfileSchema) => Promise<void>;
 }
@@ -319,28 +323,95 @@ export const EnhancedAuthProvider = ({
     [baseAuth.signIn]
   );
 
-  // const signInWithGoogle = useCallback(
-  //   async (idToken: string): Promise<UserCredential> => {
-  //     const credential = GoogleAuthProvider.credential(idToken);
-  //     try {
-  //       const userCredential = await signInWithCredential(auth, credential);
-  //       return userCredential;
-  //     } catch (error: any) {
-  //       if (error.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
-  //         throw new Error(
-  //           "An account with this email already exists. Please sign in with your original method first, then link your Google account."
-  //         );
-  //       }
-  //       throw error;
-  //     }
-  //   },
-  //   [auth]
-  // );
-  const signInWithGoogle =
-    useCallback(async (): Promise<UserCredential | null> => {
-      console.log("signInWithGoogle");
-      return null;
-    }, []);
+  const signInWithGoogle = useCallback(
+    async (
+      idToken: string,
+      googleUser: GoogleUser
+    ): Promise<UserCredential | null> => {
+      try {
+        const credential = GoogleAuthProvider.credential(idToken);
+        try {
+          const userCredential = await signInWithCredential(auth, credential);
+          // return userCredential;
+
+          const { user } = userCredential;
+
+          const existingProfile = await firestoreContext.getDocument(
+            "users",
+            user.uid
+          );
+
+          if (!existingProfile) {
+            const googleProfileData: Partial<UserProfile> = {
+              provider: "google.com",
+              displayName: {
+                givenName: googleUser.user.givenName || "",
+                familyName: googleUser.user.familyName || "",
+              },
+            };
+
+            safeLog("log", "Creating Google profile");
+            await createUserProfile(user, googleProfileData);
+            await syncUserProfile(user, true);
+          } else {
+            safeLog("log", "Existing Google user profile found");
+            await syncUserProfile(user);
+          }
+
+          console.log(
+            "Google Sign-In successful, user authenticated:",
+            user.uid
+          );
+          return userCredential;
+        } catch (firebaseError: any) {
+          if (firebaseError.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
+            Alert.alert(
+              "Account Already Exists",
+              "An account with this email already exists. Would you like to link your Apple account?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Link Account",
+                  onPress: async () => {
+                    Alert.alert(
+                      "Link Account",
+                      "Please sign in with your existing account first, then you can link your Apple account in settings."
+                    );
+                  },
+                },
+              ]
+            );
+            return null;
+          }
+
+          if (firebaseError.code === AuthErrorCodes.POPUP_CLOSED_BY_USER) {
+            return null;
+          }
+
+          throw firebaseError;
+        }
+      } catch (error: any) {
+        safeLog("error", "Google Sign-In error");
+
+        if (error.code === "ERR_REQUEST_CANCELED") {
+          safeLog("log", "Google Sign-In cancelled");
+          return null;
+        }
+
+        let errorMessage = "Google Sign-In failed. Please try again.";
+        if (error.code === AuthErrorCodes.NETWORK_REQUEST_FAILED) {
+          errorMessage =
+            "Network error. Please check your connection and try again.";
+        } else if (error.code === AuthErrorCodes.TOO_MANY_ATTEMPTS_TRY_LATER) {
+          errorMessage = "Too many attempts. Please try again later.";
+        }
+
+        Alert.alert("Sign-In Error", errorMessage);
+        return null;
+      }
+    },
+    [auth, firestoreContext, syncUserProfile, createUserProfile]
+  );
 
   const linkGoogleAccount = useCallback(
     async (idToken: string): Promise<UserCredential> => {

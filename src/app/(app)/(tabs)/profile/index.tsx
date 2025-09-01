@@ -13,6 +13,8 @@ import { History } from "@/lib/icons/history";
 import { Settings } from "@/lib/icons/settings";
 import { UserRoundPlus } from "@/lib/icons/user-round-plus";
 import { useIsomorphicLayoutEffect } from "@/lib/use-isomorphic-layout-effect";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/lib/utils";
 
 export default function ProfileScreen() {
   const { authUser } = useEnhancedAuth();
@@ -54,6 +56,10 @@ export default function ProfileScreen() {
     }
   };
 
+  const photoUrl = useMemo(() => {
+    return authUser?.photoURL;
+  }, [authUser?.photoURL]);
+
   return (
     <ScrollView
       className="flex-1 px-4"
@@ -61,8 +67,30 @@ export default function ProfileScreen() {
       onScroll={handleScroll}
       contentInsetAdjustmentBehavior="automatic"
     >
-      <View className="py-6">
-        <Text className="text-2xl font-bold text-foreground mb-6">Profile</Text>
+      <View className="flex-1 items-center justify-center gap-4">
+        {/* Profile Image */}
+        <Avatar alt="User's Avatar">
+          <AvatarImage source={{ uri: photoUrl }} />
+          <AvatarFallback>
+            <Text>{getInitials(fullName)}</Text>
+          </AvatarFallback>
+        </Avatar>
+
+        {/* Full Name */}
+        <Text className="text-2xl font-medium text-center font-sans">
+          {fullName}
+        </Text>
+
+        {/* Bio TODO: Implement Todo */}
+        <Text className="text-sm text-muted-foreground text-center font-mono">
+          Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque
+          faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi
+          pretium tellus duis convallis. Tempus leo eu aenean sed diam urna
+          tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas.
+          Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut
+          hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent
+          per conubia nostra inceptos himenaeos.
+        </Text>
       </View>
     </ScrollView>
   );

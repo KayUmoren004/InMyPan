@@ -40,3 +40,30 @@ export const safeLog = (
     }
   }
 };
+
+/**
+ * Get initials from a full name
+ * @param fullName - The full name to get initials from
+ * @returns The initials
+ */
+export const getInitials = (fullName: string) => {
+  return fullName
+    .split(" ")
+    .map((name) => name[0].toUpperCase())
+    .join("");
+};
+
+/**
+ * Get a URL for a user's avatar
+ * @param photoURL - The user's photo URL
+ * @returns The avatar URL
+ */
+export const getAvatarFallbackURL = (fullName: string) => {
+  if (!fullName || fullName.trim().length === 0) {
+    return "https://api.dicebear.com/7.x/initials/svg?seed=U";
+  }
+
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${getInitials(
+    fullName
+  )}`;
+};

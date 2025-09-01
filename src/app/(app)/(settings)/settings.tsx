@@ -143,16 +143,16 @@ export default function Settings() {
               type: "action",
               action: async () => {
                 const canShare = await Sharing.isAvailableAsync();
+
+                const shareUrl = authUser?.username
+                  ? `https://www.share.inmypan.com/u/${authUser?.username}`
+                  : `https://www.inmypan.com`;
+
                 if (canShare) {
-                  await Sharing.shareAsync(
-                    `https://www.share.inmypan.com/u/${
-                      authUser?.username ?? authUser?.email
-                    }`,
-                    {
-                      dialogTitle: "Share InMyPan",
-                      mimeType: "text/plain",
-                    }
-                  );
+                  await Sharing.shareAsync(shareUrl, {
+                    dialogTitle: "Share InMyPan",
+                    mimeType: "text/plain",
+                  });
                 }
               },
             }}
@@ -279,7 +279,7 @@ function SettingsItem({
 
 function EditProfile() {
   const { authUser } = useEnhancedAuth();
-  const { push } = useRouter();
+  const { replace } = useRouter();
 
   const fullName = useMemo(() => {
     const given = authUser?.displayName?.givenName || "";
@@ -292,7 +292,16 @@ function EditProfile() {
   }, [authUser?.photoURL]);
 
   return (
-    <TouchableOpacity onPress={() => push("/edit-profile")}>
+    <TouchableOpacity
+      onPress={() =>
+        replace({
+          pathname: "/edit-profile",
+          params: {
+            previousPath: "/settings",
+          },
+        })
+      }
+    >
       <View className="flex flex-row items-center justify-between py-2 px-4 ">
         <View className="flex flex-row items-center justify-start gap-4">
           <Avatar alt="User's Avatar" className="size-20">

@@ -85,9 +85,7 @@ export default function Settings() {
         <TouchableOpacity onPress={() => router.back()}>
           <ChevronLeft size={24} color="white" />
         </TouchableOpacity>
-        <Text className="text-lg font-semibold text-gray-900 dark:text-white">
-          Settings
-        </Text>
+        <Text className="text-lg font-semibold ">Settings</Text>
         <View className="w-6" />
       </View>
 

@@ -32,29 +32,7 @@ import { useStorage } from "./firebase/use-storage";
 import type { CompleteProfileSchema } from "@/lib/zod-validation";
 import { safeLog } from "@/lib/utils";
 import type { User as GoogleUser } from "@react-native-google-signin/google-signin";
-
-// Types
-export interface UserProfile {
-  id: string;
-  email: string;
-  displayName?: {
-    givenName?: string;
-    familyName?: string;
-    middleName?: string;
-    nickname?: string;
-    namePrefix?: string;
-    nameSuffix?: string;
-  } | null;
-  photoURL?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  provider?: string;
-  username?: string;
-}
-
-interface AuthUser extends UserProfile {
-  firebaseUser: User;
-}
+import { AuthUser, UserProfile } from "@/components/types/user-types";
 
 interface EnhancedAuthContextType {
   authUser: AuthUser | null;

@@ -1,4 +1,11 @@
-import { View, ScrollView, TouchableOpacity, Alert, Image } from "react-native";
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ActionSheetIOS,
+} from "react-native";
 import { Text } from "@/components/ui/text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
@@ -173,7 +180,32 @@ export default function EditProfile() {
     errors.bio && "border-red-500 dark:border-red-500"
   );
 
-  // TODO: Dropdown to handle photo actions
+  const deletePhoto = () => {
+    throw new Error("Not implemented");
+  };
+
+  // TODO: Dropdown to handle photo action
+  const handlePhotoAction = () => {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: ["Cancel", "Photo Library", "Camera", "Delete Photo"],
+        destructiveButtonIndex: 3,
+        cancelButtonIndex: 0,
+        userInterfaceStyle: "dark",
+      },
+      (buttonIndex) => {
+        if (buttonIndex === 0) {
+          // cancel action
+        } else if (buttonIndex === 1) {
+          pickImage();
+        } else if (buttonIndex === 2) {
+          takePhoto();
+        } else if (buttonIndex === 3) {
+          deletePhoto();
+        }
+      }
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -231,10 +263,10 @@ export default function EditProfile() {
 
             <View className="absolute bottom-0 right-0 flex-row">
               <TouchableOpacity
-                onPress={takePhoto}
-                className="bg-blue-500 p-2 rounded-full mr-1"
+                onPress={handlePhotoAction}
+                className="bg-white p-2 rounded-full mr-1"
               >
-                <Camera size={16} color="white" />
+                <Camera size={16} color="black" />
               </TouchableOpacity>
             </View>
           </View>
@@ -305,7 +337,6 @@ export default function EditProfile() {
                   value={value}
                   onChangeText={onChange}
                   onBlur={onBlur}
-                  numberOfLines={3}
                   className={cn(
                     inputClassName,
                     "shadow-none bg-background py-0 px-3 text-lg"

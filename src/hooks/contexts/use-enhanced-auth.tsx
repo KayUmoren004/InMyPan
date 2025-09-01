@@ -49,6 +49,7 @@ export interface UserProfile {
   createdAt: Date;
   updatedAt: Date;
   provider?: string;
+  username?: string;
 }
 
 interface AuthUser extends UserProfile {
@@ -139,6 +140,7 @@ export const EnhancedAuthProvider = ({
         createdAt: new Date(),
         updatedAt: new Date(),
         provider: firebaseUser.providerData[0]?.providerId || "email",
+        username: additionalData?.username || "",
         ...rest,
       };
 
@@ -614,6 +616,7 @@ export const EnhancedAuthProvider = ({
           givenName: profile.givenName,
           familyName: profile.familyName,
         },
+        username: profile.username,
       });
 
       await syncUserProfile(user);

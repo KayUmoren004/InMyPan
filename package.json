@@ -51,7 +51,8 @@
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.25.56",
     "expo-blur": "~14.1.5",
-    "@shopify/flash-list": "1.7.6"
+    "@shopify/flash-list": "1.7.6",
+    "expo-sharing": "~13.1.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

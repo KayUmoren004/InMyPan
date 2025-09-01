@@ -23,7 +23,7 @@ interface MealData {
   id: string;
   title: string;
   description: string;
-  imageUrl: string;
+  imageUrls: string[];
   timestamp: string;
   likes: number;
 }
@@ -75,13 +75,14 @@ const generateMockMeals = (startIndex: number, count: number): MealData[] => {
   return Array.from({ length: count }, (_, index) => {
     const mealIndex = (startIndex + index) % mealNames.length;
     const descIndex = (startIndex + index) % descriptions.length;
-    const imageIndex = (startIndex + index) % imageUrls.length;
+    const imageIndex1 = (startIndex + index) % imageUrls.length;
+    const imageIndex2 = (startIndex + index + 1) % imageUrls.length;
 
     return {
       id: `meal-${startIndex + index}`,
       title: mealNames[mealIndex],
       description: descriptions[descIndex],
-      imageUrl: imageUrls[imageIndex],
+      imageUrls: [imageUrls[imageIndex1], imageUrls[imageIndex2]],
       timestamp: `${Math.floor(Math.random() * 24)}h ago`,
       likes: Math.floor(Math.random() * 100) + 1,
     };
@@ -226,7 +227,7 @@ export default function Profile() {
         data={meals}
         renderItem={renderMeal}
         estimatedItemSize={200}
-        numColumns={2}
+        numColumns={3}
         ListHeaderComponent={ListHeaderComponent}
         onEndReached={loadMoreMeals}
         onEndReachedThreshold={0.5}
@@ -271,33 +272,26 @@ const NumberLabel = ({ number, label }: { number: number; label: string }) => {
 
 const MealCard = ({ meal }: { meal: MealData }) => {
   return (
-    <View className="flex-1 m-1 bg-card border border-border rounded-lg overflow-hidden">
-      {/* Meal Image */}
-      <Image
-        source={{ uri: meal.imageUrl }}
-        className="w-full h-32 bg-muted"
-        resizeMode="cover"
-      />
+    <View className=" border-black bg-black rounded-lg overflow-hidden shadow-sm mx-4 my-2 h-48 w-36">
+      <View className="relative">
+        <Image
+          source={{ uri: meal.imageUrls[0] || "/placeholder.svg" }}
+          className="w-full h-full bg-gray-100"
+          resizeMode="cover"
+        />
 
-      {/* Meal Info */}
-      <View className="p-3">
-        <Text
-          className="text-sm font-semibold text-foreground"
-          numberOfLines={1}
-        >
-          {meal.title}
-        </Text>
-        <Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>
-          {meal.description}
-        </Text>
-
-        {/* Footer */}
-        <View className="flex-row justify-between items-center mt-2">
-          <Text className="text-xs text-muted-foreground">
-            {meal.timestamp}
-          </Text>
-          <Text className="text-xs text-muted-foreground">❤️ {meal.likes}</Text>
-        </View>
+        {/* Circular User/Secondary Image - positioned like BeReal */}
+        {meal.imageUrls[1] && (
+          <View className="absolute bottom-1 right-1">
+            <View className="w-16 h-16 rounded-full border-2 border-white overflow-hidden bg-gray-100 shadow-lg">
+              <Image
+                source={{ uri: meal.imageUrls[1] || "/placeholder.svg" }}
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+            </View>
+          </View>
+        )}
       </View>
     </View>
   );

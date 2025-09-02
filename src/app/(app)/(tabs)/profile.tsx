@@ -17,6 +17,7 @@ import { useIsomorphicLayoutEffect } from "@/lib/use-isomorphic-layout-effect";
 import { getInitials } from "@/lib/utils";
 import { Share } from "@/lib/icons/share";
 import { FlashList } from "@shopify/flash-list";
+import { UserProfilePhoto } from "@/components/views/user-profile-photo";
 
 // Mock meal data interface
 interface MealData {
@@ -167,58 +168,47 @@ export default function Profile() {
     return authUser?.photoURL;
   }, [authUser?.photoURL]);
 
-  const bio =
-    " Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.";
-
   // Render meal item for FlashList
   const renderMeal = useCallback(({ item }: { item: MealData }) => {
     return <MealCard meal={item} />;
   }, []);
 
   // Header component for FlashList
-  const ListHeaderComponent = useCallback(
-    () => (
-      <View className="flex-col items-center justify-center gap-4 w-full pb-4">
-        <View className="flex-1 items-center justify-center gap-4 w-full">
-          {/* Profile Image */}
-          <Avatar alt="User's Avatar" className="size-24">
-            <AvatarImage source={{ uri: photoUrl }} />
-            <AvatarFallback>
-              <Text>{getInitials(fullName)}</Text>
-            </AvatarFallback>
-          </Avatar>
+  const ListHeaderComponent = (
+    <View className="flex-col items-center justify-center gap-4 w-full pb-4">
+      <View className="flex-1 items-center justify-center gap-4 w-full">
+        {/* Profile Image */}
+        <UserProfilePhoto />
 
-          {/* Full Name */}
-          <Text className="text-2xl font-bold text-center font-sans">
-            {fullName}
-          </Text>
+        {/* Full Name */}
+        <Text className="text-2xl font-bold text-center font-sans">
+          {fullName}
+        </Text>
 
-          {/* Bio */}
-          <Text
-            className="text-sm text-muted-foreground text-center font-mono w-3/4"
-            numberOfLines={4}
-            ellipsizeMode="tail"
-          >
-            {bio}
-          </Text>
-        </View>
-
-        {/* Share Profile */}
-        <View className="w-full">
-          <TouchableOpacity className="bg-muted/50 flex-row items-center gap-2 justify-center w-full rounded-md p-4">
-            <Share className="text-foreground" size={20} />
-            <Text className="text-foreground font-medium">Share Profile</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Friends & Posts */}
-        <View className="w-full flex-row items-center justify-center gap-16 mb-4">
-          <NumberLabel number={meals.length} label="Meals" />
-          <NumberLabel number={96} label="Friends" />
-        </View>
+        {/* Bio */}
+        <Text
+          className="text-sm text-muted-foreground text-center font-mono w-3/4"
+          numberOfLines={4}
+          ellipsizeMode="tail"
+        >
+          {authUser?.bio}
+        </Text>
       </View>
-    ),
-    [photoUrl, fullName, bio, meals.length]
+
+      {/* Share Profile */}
+      <View className="w-full">
+        <TouchableOpacity className="bg-muted/50 flex-row items-center gap-2 justify-center w-full rounded-md p-4">
+          <Share className="text-foreground" size={20} />
+          <Text className="text-foreground font-medium">Share Profile</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Friends & Posts */}
+      <View className="w-full flex-row items-center justify-center gap-16 mb-4">
+        <NumberLabel number={meals.length} label="Meals" />
+        <NumberLabel number={96} label="Friends" />
+      </View>
+    </View>
   );
 
   return (

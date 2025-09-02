@@ -5,6 +5,7 @@ import {
   Alert,
   Image,
   ActionSheetIOS,
+  Platform,
 } from "react-native";
 import { Text } from "@/components/ui/text";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,13 +25,13 @@ import {
   X,
   ChevronLeft,
 } from "lucide-react-native";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { cn } from "@/lib/utils";
+import { cn, safeLog } from "@/lib/utils";
 import { useIsomorphicLayoutEffect } from "@/lib/use-isomorphic-layout-effect";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -43,6 +44,7 @@ const editProfileSchema = z.object({
   work: z.string().optional(),
   education: z.string().optional(),
   bio: z.string().max(300, "Bio must be less than 300 characters").optional(),
+  profileImage: z.string().nullable(),
 });
 
 type EditProfileSchema = z.infer<typeof editProfileSchema>;
@@ -53,9 +55,7 @@ export default function EditProfile() {
   const { previousPath } = useLocalSearchParams<{ previousPath: string }>();
 
   const { replace } = useRouter();
-  const [profileImage, setProfileImage] = useState<string | undefined>(
-    authUser?.photoURL || undefined
-  );
+
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -63,6 +63,8 @@ export default function EditProfile() {
     handleSubmit,
     formState: { errors, isValid, isDirty },
     reset,
+    watch,
+    setValue,
   } = useForm<EditProfileSchema>({
     defaultValues: {
       givenName: "",
@@ -73,10 +75,13 @@ export default function EditProfile() {
       work: "",
       education: "",
       bio: "",
+      profileImage: null,
     },
     resolver: zodResolver(editProfileSchema),
     mode: "onChange",
   });
+
+  const profileImage = watch("profileImage");
 
   useIsomorphicLayoutEffect(() => {
     reset({
@@ -88,6 +93,7 @@ export default function EditProfile() {
       work: authUser?.work || "",
       education: authUser?.education || "",
       bio: authUser?.bio || "",
+      profileImage: authUser?.photoURL || null,
     });
   }, [authUser]);
 
@@ -97,50 +103,91 @@ export default function EditProfile() {
     });
   }, []);
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const getPermission = useCallback(async () => {
+    if (Platform.OS !== "web") {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission needed",
-        "Please grant permission to access your photo library."
-      );
-      return;
+      return status;
     }
+  }, []);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+  const getCameraPermission = useCallback(async () => {
+    if (Platform.OS !== "web") {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
-    if (!result.canceled && result.assets[0]) {
-      setProfileImage(result.assets[0].uri);
+      return status;
     }
-  };
+  }, []);
 
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  const pickImage = useCallback(async () => {
+    try {
+      const libraryStatus = await getPermission();
 
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission needed",
-        "Please grant permission to access your camera."
-      );
-      return;
+      if (libraryStatus !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need permission to access your photo library."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images", "livePhotos"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets) {
+        setValue("profileImage", result.assets[0].uri, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      }
+    } catch (error) {
+      safeLog("error", "Error picking profile image");
+      Alert.alert("Error", "Failed to select image. Please try again.");
     }
+  }, [getPermission, setValue]);
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+  console.log(watch());
 
-    if (!result.canceled && result.assets[0]) {
-      setProfileImage(result.assets[0].uri);
+  const takePhoto = useCallback(async () => {
+    try {
+      const cameraStatus = await getCameraPermission();
+
+      if (cameraStatus !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need permission to access your camera."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images", "livePhotos"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets) {
+        setValue("profileImage", result.assets[0].uri, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      }
+    } catch (error) {
+      safeLog("error", "Error capturing profile image");
+      Alert.alert("Error", "Failed to capture image. Please try again.");
     }
-  };
+  }, [getCameraPermission, setValue]);
+
+  // Remove image
+  const removeImage = useCallback(() => {
+    setValue("profileImage", "", { shouldValidate: true });
+  }, [setValue]);
 
   const onSubmit = async (data: EditProfileSchema) => {
     setIsLoading(true);

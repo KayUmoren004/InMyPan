@@ -1,74 +1,16 @@
+"use client";
+
 import { View, ScrollView, TouchableOpacity, Linking } from "react-native";
 import { Text } from "@/components/ui/text";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  ArrowLeft,
-  ExternalLink,
-  FileText,
-  Shield,
-  Heart,
-  Code,
-  Users,
-  Mail,
-  ChevronLeft,
-} from "lucide-react-native";
+
 import { useRouter } from "expo-router";
-import { cn } from "@/lib/utils";
-
-interface AboutSectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-function AboutSection({ title, children }: AboutSectionProps) {
-  return (
-    <View className="flex flex-col gap-2 mb-6">
-      <Text className="text-lg text-muted-foreground font-sans">{title}</Text>
-      <View className="bg-muted/50 rounded-md">{children}</View>
-    </View>
-  );
-}
-
-interface AboutItemProps {
-  icon: React.ReactNode;
-  title: string;
-  onPress?: () => void;
-  showExternalLink?: boolean;
-  last?: boolean;
-  disabled?: boolean;
-  className?: string;
-}
-
-function AboutItem({
-  icon,
-  title,
-  onPress,
-  showExternalLink = false,
-  className,
-  last,
-  disabled,
-}: AboutItemProps) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      className={cn(
-        "flex flex-row items-center justify-between p-4",
-        className,
-        last && "rounded-b-md",
-        !last && "border-b border-muted/50",
-        disabled && "opacity-50"
-      )}
-    >
-      <View className="mr-3 text-gray-600 dark:text-gray-400">{icon}</View>
-      <View className="flex-1">
-        <Text className="font-medium text-gray-900 dark:text-gray-100">
-          {title}
-        </Text>
-      </View>
-      {showExternalLink && <ExternalLink size={16} color="#6B7280" />}
-    </TouchableOpacity>
-  );
-}
+import { Section, SectionItem } from "@/components/ui/section";
+import { ChevronLeft } from "@/lib/icons/chevron-left";
+import { FileText } from "@/lib/icons/file-text";
+import { ExternalLink } from "@/lib/icons/external-link";
+import { Mail } from "@/lib/icons/mail";
+import { UsersRound } from "@/lib/icons/users-round";
 
 export default function About() {
   const router = useRouter();
@@ -92,39 +34,43 @@ export default function About() {
       </View>
 
       <ScrollView className="flex-1 px-4 mt-6">
-        {/* Legal */}
-        <AboutSection title="Legal">
-          <AboutItem
-            icon={<FileText size={20} />}
+        <Section title="Legal">
+          <SectionItem
+            icon={<FileText size={20} className="text-muted-foreground" />}
             title="Terms of Service"
             onPress={() => openLink("https://inmypan.com/terms")}
-            showExternalLink={true}
+            leftIcon={
+              <ExternalLink size={20} className="text-muted-foreground" />
+            }
           />
-          <AboutItem
-            icon={<Shield size={20} />}
+          <SectionItem
+            icon={<FileText size={20} className="text-muted-foreground" />}
             title="Privacy Policy"
             onPress={() => openLink("https://inmypan.com/privacy")}
-            showExternalLink={true}
-            last
+            leftIcon={
+              <ExternalLink size={20} className="text-muted-foreground" />
+            }
           />
-        </AboutSection>
+        </Section>
 
-        {/* Support */}
-        <AboutSection title="Support">
-          <AboutItem
-            icon={<Mail size={20} />}
+        <Section title="Support">
+          <SectionItem
+            icon={<Mail size={20} className="text-muted-foreground" />}
             title="Contact Us"
             onPress={() => openLink("mailto:support@inmypan.com")}
-            showExternalLink={true}
+            leftIcon={
+              <ExternalLink size={20} className="text-muted-foreground" />
+            }
           />
-          <AboutItem
-            icon={<Users size={20} />}
+          <SectionItem
+            icon={<UsersRound size={20} className="text-muted-foreground" />}
             title="Community"
             onPress={() => openLink("https://community.inmypan.com")}
-            showExternalLink={true}
-            last
+            leftIcon={
+              <ExternalLink size={20} className="text-muted-foreground" />
+            }
           />
-        </AboutSection>
+        </Section>
 
         {/* Spacer */}
         <View className="h-8" />

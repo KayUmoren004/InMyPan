@@ -1,18 +1,11 @@
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Switch,
-} from "react-native";
+"use client";
+
+import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Text } from "@/components/ui/text";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 import {
   ChevronLeft,
-  ChevronRight,
-  Icon,
-  LucideIcon,
   Shield,
   Bell,
   CircleDotDashed,
@@ -26,14 +19,11 @@ import {
 } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { useRouter } from "expo-router";
-import { cn, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import * as Sharing from "expo-sharing";
-
-interface SettingsSectionProps {
-  title?: string;
-  children?: React.ReactNode;
-}
+import { Section, SectionItem } from "@/components/ui/section";
+import { UserProfilePhoto } from "@/components/views/user-profile-photo";
 
 export default function Settings() {
   const { logout } = useEnhancedAuth();
@@ -90,51 +80,43 @@ export default function Settings() {
       </View>
 
       <ScrollView className="flex-1 flex-col px-4 gap-6">
-        <SettingsSection>
+        <Section>
           <EditProfile />
-        </SettingsSection>
+        </Section>
 
-        <SettingsSection title="Settings">
-          {/* Privacy */}
-          <SettingsItem
+        <Section title="Settings">
+          <SectionItem
             title="Privacy"
             icon={<Shield size={20} color="white" />}
             action={{ type: "navigate", navigateTo: "/privacy" }}
           />
-          {/* Notifications */}
-          <SettingsItem
+          <SectionItem
             title="Notifications"
             icon={<Bell size={20} color="white" />}
             action={{ type: "navigate", navigateTo: "/notifications" }}
-            last
           />
-        </SettingsSection>
-        <SettingsSection title="Features">
-          {/* Coming Soon */}
-          <SettingsItem
+        </Section>
+
+        <Section title="Features">
+          <SectionItem
             title="Coming Soon"
             icon={<CircleDotDashed size={20} color="white" />}
             disabled
-            last
           />
-        </SettingsSection>
-        <SettingsSection title="Under the Hood">
-          {/* About */}
-          <SettingsItem
+        </Section>
+
+        <Section title="Under the Hood">
+          <SectionItem
             title="About"
             icon={<Info size={20} color="white" />}
             action={{ type: "navigate", navigateTo: "/about" }}
           />
-
-          {/* Help */}
-          <SettingsItem
+          <SectionItem
             title="Help"
             icon={<HelpCircle size={20} color="white" />}
             action={{ type: "navigate", navigateTo: "/help" }}
           />
-
-          {/* Share */}
-          <SettingsItem
+          <SectionItem
             title="Share"
             icon={<Share size={20} color="white" />}
             action={{
@@ -155,35 +137,28 @@ export default function Settings() {
               },
             }}
           />
-
-          {/* Rate Us */}
-          <SettingsItem
+          <SectionItem
             title="Rate Us"
             icon={<Star size={20} color="white" />}
             disabled
-            last
           />
-        </SettingsSection>
+        </Section>
 
-        {/* Log Out */}
-        <SettingsSection title="Account">
-          <SettingsItem
+        <Section title="Account">
+          <SectionItem
             title="Log Out"
             icon={<LogOut size={20} color="white" />}
             action={{ type: "action", action: handleLogout }}
-            chevronHidden
+            showChevron={false}
           />
-
-          {/* Delete Account */}
-          <SettingsItem
+          <SectionItem
             title="Delete Account"
             className="bg-destructive/50"
             icon={<Trash size={20} color="white" />}
             action={{ type: "action", action: handleDeleteAccount }}
-            chevronHidden
-            last
+            showChevron={false}
           />
-        </SettingsSection>
+        </Section>
 
         {/* App Version */}
         <Text className="text-sm text-muted-foreground text-center">
@@ -191,87 +166,6 @@ export default function Settings() {
         </Text>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-const data = [
-  { text: "Notifications", systemImage: "bell" },
-  { text: "Sound", systemImage: "speaker" },
-  { text: "Profile Visibility", systemImage: "eye" },
-];
-
-function SettingsSection({ title, children }: SettingsSectionProps) {
-  return (
-    <View className="flex flex-col gap-2 mb-6">
-      <Text className="text-lg text-muted-foreground font-sans">{title}</Text>
-      <View className="bg-muted/50 rounded-md">{children}</View>
-    </View>
-  );
-}
-
-interface SettingItemAction {
-  type: "navigate" | "action";
-  navigateTo?: string;
-  action?: () => void;
-}
-
-interface SettingsItemProps {
-  className?: string;
-  title: string;
-  titleClassName?: string;
-  icon: React.ReactNode;
-  iconHidden?: boolean;
-  action?: SettingItemAction;
-  last?: boolean;
-  chevronHidden?: boolean;
-  disabled?: boolean;
-}
-
-function SettingsItem({
-  className,
-  title,
-  icon,
-  action,
-  last,
-  titleClassName,
-  iconHidden,
-  chevronHidden,
-  disabled,
-}: SettingsItemProps) {
-  const { push } = useRouter();
-
-  const handlePress = () => {
-    if (disabled) return;
-
-    switch (action?.type) {
-      case "navigate":
-        push(action.navigateTo as string);
-        break;
-      case "action":
-        action.action?.();
-    }
-  };
-
-  return (
-    <TouchableOpacity onPress={handlePress} disabled={disabled}>
-      <View
-        className={cn(
-          "flex flex-row items-center justify-between p-4",
-          className,
-          last && "rounded-b-md",
-          !last && "border-b border-muted/50",
-          disabled && "opacity-50"
-        )}
-      >
-        <View className="flex flex-row items-center gap-2">
-          {!iconHidden && icon}
-          <Text className={cn("text-sm text-foreground", titleClassName)}>
-            {title}
-          </Text>
-        </View>
-        {!chevronHidden && <ChevronRight size={20} color="white" />}
-      </View>
-    </TouchableOpacity>
   );
 }
 
@@ -302,12 +196,7 @@ function EditProfile() {
     >
       <View className="flex flex-row items-center justify-between py-2 px-4 ">
         <View className="flex flex-row items-center justify-start gap-4">
-          <Avatar alt="User's Avatar" className="size-20">
-            <AvatarImage source={{ uri: photoUrl }} />
-            <AvatarFallback>
-              <Text>{getInitials(fullName)}</Text>
-            </AvatarFallback>
-          </Avatar>
+          <UserProfilePhoto className="size-20" fallbackClassName="size-20" />
           <View className="flex flex-col">
             <View className="flex flex-row items-center justify-start 2">
               <Text className="font-bold text-xl">{fullName}</Text>

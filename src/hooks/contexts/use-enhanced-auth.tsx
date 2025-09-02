@@ -423,8 +423,16 @@ export const EnhancedAuthProvider = ({
         throw new Error("No user signed in");
       }
 
+      const { photoURL, ...rest } = updates;
+
+      let profileImageUrl: string | null = null;
+      if (photoURL) {
+        profileImageUrl = await uploadProfileImage(photoURL, authUser.id);
+      }
+
       const updatedData = {
-        ...updates,
+        ...rest,
+        photoURL: profileImageUrl ?? "",
         updatedAt: new Date(),
       };
 

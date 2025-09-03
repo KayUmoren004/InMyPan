@@ -52,7 +52,10 @@ type EditProfileSchema = z.infer<typeof editProfileSchema>;
 export default function EditProfile() {
   const { authUser, updateProfile } = useEnhancedAuth();
   const navigation = useNavigation();
-  const { previousPath } = useLocalSearchParams<{ previousPath: string }>();
+  const { previousPath, animationTypeForReplace } = useLocalSearchParams<{
+    previousPath: string;
+    animationTypeForReplace: "pop" | "push";
+  }>();
 
   const { replace } = useRouter();
 
@@ -99,9 +102,10 @@ export default function EditProfile() {
 
   useIsomorphicLayoutEffect(() => {
     navigation.setOptions({
-      animationTypeForReplace: "push",
+      animationTypeForReplace:
+        (animationTypeForReplace as "pop" | "push") || "push",
     });
-  }, []);
+  }, [animationTypeForReplace, navigation]);
 
   const getPermission = useCallback(async () => {
     if (Platform.OS !== "web") {

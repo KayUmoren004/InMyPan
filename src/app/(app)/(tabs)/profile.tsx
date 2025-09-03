@@ -7,6 +7,7 @@ import {
   Image,
   useWindowDimensions,
   TouchableOpacity,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/text";
@@ -17,6 +18,8 @@ import { useIsomorphicLayoutEffect } from "@/lib/use-isomorphic-layout-effect";
 import { Share } from "@/lib/icons/share";
 import { FlashList, ListRenderItem } from "@shopify/flash-list";
 import { UserProfilePhoto } from "@/components/views/user-profile-photo";
+import * as Sharing from "expo-sharing";
+import Modal from "@/components/ui/modal";
 
 // ---------- Mock data ----------
 interface MealData {
@@ -91,7 +94,7 @@ const generateMockMeals = (startIndex: number, count: number): MealData[] => {
 // ---------- Screen ----------
 export default function Profile() {
   const { authUser, logout } = useEnhancedAuth();
-  const router = useRouter();
+  const { replace } = useRouter();
   const navigation = useNavigation();
   const scrollViewRef = useRef<FlashList<MealData>>(null);
   const [scrollOffset, setScrollOffset] = useState(0);
@@ -100,6 +103,8 @@ export default function Profile() {
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
+  const [friendsModalOpen, setFriendsModalOpen] = useState(false);
 
   // === Layout constants for a stable grid ===
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -126,7 +131,7 @@ export default function Profile() {
   }, [navigation]);
 
   useIsomorphicLayoutEffect(() => {
-    const shouldShowTitle = scrollOffset > 100;
+    const shouldShowTitle = scrollOffset > 170;
     navigation.setOptions({
       headerTitle: shouldShowTitle ? fullName : "",
       headerShadowVisible: false,
@@ -159,29 +164,56 @@ export default function Profile() {
   // Stable header (no dynamic heights)
   const ListHeaderComponent = useCallback(
     () => (
-      <View
-        className="items-center justify-center w-full gap-4 py-4" /* stable spacing */
-      >
-        {/* Profile Image - ensure your UserProfilePhoto renders at a fixed size (e.g., 96–128) */}
-        <UserProfilePhoto />
-
-        {/* Full Name */}
-        <Text className="text-2xl font-bold text-center font-sans">
-          {fullName}
-        </Text>
-
-        {/* Bio - keep a fixed max width to prevent reflow */}
-        <Text
-          className="text-sm text-muted-foreground text-center font-mono"
-          numberOfLines={4}
-          ellipsizeMode="tail"
-          style={{ maxWidth: Math.min(360, screenWidth - 32) }}
+      <View className="items-center justify-center w-full gap-4 py-4">
+        <Pressable
+          className="flex flex-col items-center justify-center gap-4"
+          onPress={() => {
+            replace({
+              pathname: "/edit-profile",
+              params: {
+                previousPath: "/profile",
+                animationTypeForReplace: "pop",
+              },
+            });
+          }}
         >
-          {authUser?.bio}
-        </Text>
+          {/* Profile Image - ensure your UserProfilePhoto renders at a fixed size (e.g., 96–128) */}
+          <UserProfilePhoto className="size-36" />
+
+          {/* Full Name */}
+          <Text className="text-2xl font-bold text-center font-sans">
+            {fullName}
+          </Text>
+
+          {/* Bio - keep a fixed max width to prevent reflow */}
+          <Text
+            className="text-sm text-muted-foreground text-center font-mono"
+            numberOfLines={4}
+            ellipsizeMode="tail"
+            style={{ maxWidth: Math.min(360, screenWidth - 32) }}
+          >
+            {authUser?.bio}
+          </Text>
+        </Pressable>
 
         {/* Share Profile */}
-        <TouchableOpacity className="bg-muted/50 flex-row items-center gap-2 justify-center w-full rounded-md p-4">
+        <TouchableOpacity
+          className="bg-muted/50 flex-row items-center gap-2 justify-center w-full rounded-md p-4"
+          onPress={async () => {
+            const canShare = await Sharing.isAvailableAsync();
+
+            if (canShare) {
+              await Sharing.shareAsync(
+                authUser?.username
+                  ? `https://www.share.inmypan.com/u/${authUser?.username}`
+                  : `https://www.inmypan.com`,
+                {
+                  dialogTitle: "Share InMyPan",
+                }
+              );
+            }
+          }}
+        >
           <Share className="text-foreground" size={20} />
           <Text className="text-foreground font-medium">Share Profile</Text>
         </TouchableOpacity>
@@ -189,7 +221,11 @@ export default function Profile() {
         {/* Friends & Posts */}
         <View className="w-full flex-row items-center justify-center gap-16 mb-2">
           <NumberLabel number={meals.length} label="Meals" />
-          <NumberLabel number={96} label="Friends" />
+          <NumberLabel
+            number={96}
+            label="Friends"
+            onPress={() => setFriendsModalOpen(true)}
+          />
         </View>
       </View>
     ),
@@ -206,63 +242,83 @@ export default function Profile() {
   );
 
   return (
-    <View className="flex-1">
-      <FlashList
-        ref={scrollViewRef}
-        data={meals}
-        keyExtractor={(m) => m.id}
-        renderItem={renderMeal}
-        numColumns={COLUMNS}
-        // Tell FlashList exactly how tall each ROW is to stop initial jump
-        estimatedItemSize={ROW_HEIGHT}
-        overrideItemLayout={(layout, _item, _index, _maxColumns) => {
-          layout.size = ROW_HEIGHT; // exact row height
-          layout.span = 1;
-        }}
-        estimatedListSize={{ width: screenWidth, height: screenHeight }}
-        ListHeaderComponent={ListHeaderComponent}
-        ListHeaderComponentStyle={{
-          paddingHorizontal: H_PADDING,
-          paddingTop: 4,
-        }}
-        // columnWrapperStyle={{ gap: GAP, paddingHorizontal: H_PADDING }}
-        contentContainerStyle={{
-          paddingBottom: 20,
-          // Do NOT set horizontal padding here and on columnWrapperStyle at the same time
-        }}
-        onEndReached={loadMoreMeals}
-        onEndReachedThreshold={0.25}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-        ListFooterComponent={() =>
-          isLoadingMore ? (
-            <View className="py-4 items-center justify-center">
-              <Text className="text-muted-foreground">
-                Loading more meals...
-              </Text>
-            </View>
-          ) : !hasMore ? (
-            <View className="py-4 items-center justify-center">
-              <Text className="text-muted-foreground">
-                No more meals to load
-              </Text>
-            </View>
-          ) : null
-        }
-      />
-    </View>
+    <>
+      <View className="flex-1">
+        <FlashList
+          ref={scrollViewRef}
+          data={meals}
+          keyExtractor={(m) => m.id}
+          renderItem={renderMeal}
+          numColumns={COLUMNS}
+          // Tell FlashList exactly how tall each ROW is to stop initial jump
+          estimatedItemSize={ROW_HEIGHT}
+          overrideItemLayout={(layout, _item, _index, _maxColumns) => {
+            layout.size = ROW_HEIGHT; // exact row height
+            layout.span = 1;
+          }}
+          estimatedListSize={{ width: screenWidth, height: screenHeight }}
+          ListHeaderComponent={ListHeaderComponent}
+          ListHeaderComponentStyle={{
+            paddingHorizontal: H_PADDING,
+            paddingTop: 4,
+          }}
+          // columnWrapperStyle={{ gap: GAP, paddingHorizontal: H_PADDING }}
+          contentContainerStyle={{
+            paddingBottom: 20,
+            // Do NOT set horizontal padding here and on columnWrapperStyle at the same time
+          }}
+          onEndReached={loadMoreMeals}
+          onEndReachedThreshold={0.25}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={() =>
+            isLoadingMore ? (
+              <View className="py-4 items-center justify-center">
+                <Text className="text-muted-foreground">
+                  Loading more meals...
+                </Text>
+              </View>
+            ) : !hasMore ? (
+              <View className="py-4 items-center justify-center">
+                <Text className="text-muted-foreground">
+                  No more meals to load
+                </Text>
+              </View>
+            ) : null
+          }
+        />
+      </View>
+
+      <Modal
+        isOpen={friendsModalOpen}
+        onClose={() => setFriendsModalOpen(false)}
+        title="Friends"
+      >
+        <View className="flex-1">
+          <Text>Friends</Text>
+        </View>
+      </Modal>
+    </>
   );
 }
 
 // ---------- Small bits ----------
-const NumberLabel = ({ number, label }: { number: number; label: string }) => (
-  <View className="flex-col items-center justify-center">
+const NumberLabel = ({
+  number,
+  label,
+  onPress,
+}: {
+  number: number;
+  label: string;
+  onPress?: () => void;
+}) => (
+  <Pressable className="flex-col items-center justify-center" onPress={onPress}>
     <Text className="text-2xl font-medium text-center font-sans">{number}</Text>
     <Text className="text-sm text-muted-foreground text-center font-mono">
       {label}
     </Text>
-  </View>
+  </Pressable>
 );
 
 const MealCard = ({

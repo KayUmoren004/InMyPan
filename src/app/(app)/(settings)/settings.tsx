@@ -19,8 +19,6 @@ import {
 } from "lucide-react-native";
 import { useMemo, useState } from "react";
 import { useRouter } from "expo-router";
-import { getInitials } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import * as Sharing from "expo-sharing";
 import { Section, SectionItem } from "@/components/ui/section";
 import { UserProfilePhoto } from "@/components/views/user-profile-photo";
@@ -179,10 +177,6 @@ function EditProfile() {
     return `${given} ${family}`.trim();
   }, [authUser?.displayName?.familyName, authUser?.displayName?.givenName]);
 
-  const photoUrl = useMemo(() => {
-    return authUser?.photoURL;
-  }, [authUser?.photoURL]);
-
   return (
     <TouchableOpacity
       onPress={() =>
@@ -196,7 +190,7 @@ function EditProfile() {
     >
       <View className="flex flex-row items-center justify-between py-2 px-4 ">
         <View className="flex flex-row items-center justify-start gap-4">
-          <UserProfilePhoto className="size-20" fallbackClassName="size-20" />
+          <UserProfilePhoto className="size-20" />
           <View className="flex flex-col">
             <View className="flex flex-row items-center justify-start 2">
               <Text className="font-bold text-xl">{fullName}</Text>

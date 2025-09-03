@@ -31,28 +31,8 @@ import { useRouter } from "expo-router";
 import { useStorage } from "./firebase/use-storage";
 import type { CompleteProfileSchema } from "@/lib/zod-validation";
 import { safeLog } from "@/lib/utils";
-
-// Types
-export interface UserProfile {
-  id: string;
-  email: string;
-  displayName?: {
-    givenName?: string;
-    familyName?: string;
-    middleName?: string;
-    nickname?: string;
-    namePrefix?: string;
-    nameSuffix?: string;
-  } | null;
-  photoURL?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  provider?: string;
-}
-
-interface AuthUser extends UserProfile {
-  firebaseUser: User;
-}
+import type { User as GoogleUser } from "@react-native-google-signin/google-signin";
+import { AuthUser, UserProfile } from "@/components/types/user-types";
 
 interface EnhancedAuthContextType {
   authUser: AuthUser | null;
@@ -63,12 +43,15 @@ interface EnhancedAuthContextType {
     profile?: Partial<UserProfile>
   ) => Promise<UserCredential>;
   signIn: (email: string, password: string) => Promise<UserCredential>;
-  signInWithGoogle: (idToken: string) => Promise<UserCredential>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   linkGoogleAccount: (idToken: string) => Promise<UserCredential>;
   signInWithApple: () => Promise<UserCredential | null>;
+  signInWithGoogle: (
+    idToken: string,
+    user: GoogleUser
+  ) => Promise<UserCredential | null>;
   verifyEmail: () => Promise<void>;
   completeProfile: (profile: CompleteProfileSchema) => Promise<void>;
 }
@@ -135,6 +118,7 @@ export const EnhancedAuthProvider = ({
         createdAt: new Date(),
         updatedAt: new Date(),
         provider: firebaseUser.providerData[0]?.providerId || "email",
+        username: additionalData?.username || "",
         ...rest,
       };
 
@@ -320,21 +304,93 @@ export const EnhancedAuthProvider = ({
   );
 
   const signInWithGoogle = useCallback(
-    async (idToken: string): Promise<UserCredential> => {
-      const credential = GoogleAuthProvider.credential(idToken);
+    async (
+      idToken: string,
+      googleUser: GoogleUser
+    ): Promise<UserCredential | null> => {
       try {
-        const userCredential = await signInWithCredential(auth, credential);
-        return userCredential;
-      } catch (error: any) {
-        if (error.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
-          throw new Error(
-            "An account with this email already exists. Please sign in with your original method first, then link your Google account."
+        const credential = GoogleAuthProvider.credential(idToken);
+        try {
+          const userCredential = await signInWithCredential(auth, credential);
+          // return userCredential;
+
+          const { user } = userCredential;
+
+          const existingProfile = await firestoreContext.getDocument(
+            "users",
+            user.uid
           );
+
+          if (!existingProfile) {
+            const googleProfileData: Partial<UserProfile> = {
+              provider: "google.com",
+              displayName: {
+                givenName: googleUser.user.givenName || "",
+                familyName: googleUser.user.familyName || "",
+              },
+            };
+
+            safeLog("log", "Creating Google profile");
+            await createUserProfile(user, googleProfileData);
+            await syncUserProfile(user, true);
+          } else {
+            safeLog("log", "Existing Google user profile found");
+            await syncUserProfile(user);
+          }
+
+          console.log(
+            "Google Sign-In successful, user authenticated:",
+            user.uid
+          );
+          return userCredential;
+        } catch (firebaseError: any) {
+          if (firebaseError.code === AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE) {
+            Alert.alert(
+              "Account Already Exists",
+              "An account with this email already exists. Would you like to link your Apple account?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Link Account",
+                  onPress: async () => {
+                    Alert.alert(
+                      "Link Account",
+                      "Please sign in with your existing account first, then you can link your Apple account in settings."
+                    );
+                  },
+                },
+              ]
+            );
+            return null;
+          }
+
+          if (firebaseError.code === AuthErrorCodes.POPUP_CLOSED_BY_USER) {
+            return null;
+          }
+
+          throw firebaseError;
         }
-        throw error;
+      } catch (error: any) {
+        safeLog("error", "Google Sign-In error");
+
+        if (error.code === "ERR_REQUEST_CANCELED") {
+          safeLog("log", "Google Sign-In cancelled");
+          return null;
+        }
+
+        let errorMessage = "Google Sign-In failed. Please try again.";
+        if (error.code === AuthErrorCodes.NETWORK_REQUEST_FAILED) {
+          errorMessage =
+            "Network error. Please check your connection and try again.";
+        } else if (error.code === AuthErrorCodes.TOO_MANY_ATTEMPTS_TRY_LATER) {
+          errorMessage = "Too many attempts. Please try again later.";
+        }
+
+        Alert.alert("Sign-In Error", errorMessage);
+        return null;
       }
     },
-    [auth]
+    [auth, firestoreContext, syncUserProfile, createUserProfile]
   );
 
   const linkGoogleAccount = useCallback(
@@ -367,8 +423,16 @@ export const EnhancedAuthProvider = ({
         throw new Error("No user signed in");
       }
 
+      const { photoURL, ...rest } = updates;
+
+      let profileImageUrl: string | null = null;
+      if (photoURL) {
+        profileImageUrl = await uploadProfileImage(photoURL, authUser.id);
+      }
+
       const updatedData = {
-        ...updates,
+        ...rest,
+        photoURL: profileImageUrl ?? "",
         updatedAt: new Date(),
       };
 
@@ -538,6 +602,7 @@ export const EnhancedAuthProvider = ({
           givenName: profile.givenName,
           familyName: profile.familyName,
         },
+        username: profile.username,
       });
 
       await syncUserProfile(user);

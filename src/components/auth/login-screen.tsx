@@ -27,6 +27,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader } from "@/lib/icons/loader";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 import { safeLog } from "@/lib/utils";
+import GoogleSignInButton from "./google-sign-in-button";
+import { Mail } from "@/lib/icons/email";
 
 export default function LoginScreen() {
   const { signIn } = useEnhancedAuth();
@@ -34,7 +36,7 @@ export default function LoginScreen() {
   const { top, bottom } = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const passwordInputRef = useRef<TextInput>(null);
-  const { replace } = useRouter();
+  const { replace, push } = useRouter();
 
   const [textHeight, setTextHeight] = useState(0);
   const onTextLayout = useCallback(
@@ -130,7 +132,7 @@ export default function LoginScreen() {
               type: "timing",
               easing: Easing.out(Easing.cubic),
             }}
-            className="w-full flex-1"
+            className="w-full flex-1 hidden"
           >
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -213,7 +215,7 @@ export default function LoginScreen() {
           </MotiView>
 
           <View className="w-full flex-2 gap-4">
-            <View className="w-full flex-row justify-center items-center gap-2">
+            <View className="w-full flex-row justify-center items-center gap-2 hidden">
               <Separator className="w-1/2" />
               <Text className="text-center">or</Text>
               <Separator className="w-1/2" />
@@ -221,12 +223,23 @@ export default function LoginScreen() {
 
             <View className="w-full items-center gap-4">
               <AppleSignInButton />
+              <Button
+                variant="default"
+                className="w-full flex-row items-center justify-center gap-2 hidden" // TODO: Remove hidden
+                style={{
+                  height: 50,
+                }}
+                onPress={() => push("/actions/sign-in-email")}
+              >
+                <Mail className="size-6 text-foreground" />
+                <Text className="text-foreground">Continue with Email</Text>
+              </Button>
             </View>
           </View>
         </View>
 
         <View className="my-2 w-full flex-2 justify-end items-center gap-4">
-          <Text className="text-foreground">
+          <Text className="text-foreground hidden">
             Don&apos;t have an account?{" "}
             <Link href="/sign-up/sign-up-email" className="text-primary">
               <Text className="text-primary">Sign up</Text>

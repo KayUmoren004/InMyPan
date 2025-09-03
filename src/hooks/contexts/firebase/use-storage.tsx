@@ -27,7 +27,12 @@ export const StorageProvider = ({
     () => ({
       uploadFile: async (path: string, file: any): Promise<string> => {
         const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
+
+        const fetchResponse = await fetch(file);
+        const blob = await fetchResponse.blob();
+
+        await uploadBytes(storageRef, blob);
+
         return getDownloadURL(storageRef);
       },
       getFileUrl: async (path: string): Promise<string> => {

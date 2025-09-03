@@ -13,6 +13,7 @@ const PUBLIC_ROUTES = [
   "/actions/forgot-password/forgot-password-email",
   "/actions/forgot-password/forgot-password-check-email",
   "/actions/forgot-password/forgot-password-password",
+  "/actions/sign-in-email",
 ];
 
 const INCOMPLETE_PROFILE_ROUTE = "/actions/complete-profile";

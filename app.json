@@ -11,6 +11,7 @@
       "expo-apple-authentication",
       "expo-secure-store",
       "expo-font",
+      "@react-native-google-signin/google-signin",
       [
         "expo-router",
         {
@@ -76,7 +77,13 @@
         "tinted": "./src/assets/images/ios-tinted.png"
       },
       "usesAppleSignIn": true,
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": "1.0.0",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "com.googleusercontent.apps.450510448545-4pa5ed3kqdddocmn32tgb2ms6k0qbddu"
+        }
+      }
     },
     "updates": {
       "url": "https://u.expo.dev/8c50719d-3a92-4842-a023-1142b2c47574"

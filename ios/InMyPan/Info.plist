@@ -39,6 +39,12 @@
           <string>exp+inmypan</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.1:450510448545:web:26fe093f01ae589a02cde0</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>

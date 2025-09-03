@@ -1,4 +1,4 @@
-import { UserProfile } from "@/hooks/contexts/use-enhanced-auth";
+import { UserProfile } from "@/components/types/user-types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -39,4 +39,46 @@ export const safeLog = (
       console[type](message);
     }
   }
+};
+
+/**
+ * Get initials from a full name
+ * @param fullName - The full name to get initials from
+ * @returns The initials
+ */
+export const getInitials = (fullName: string | null) => {
+  if (!fullName || fullName.trim().length === 0) {
+    return "U";
+  }
+
+  return fullName
+    .split(" ")
+    .map((name) => name[0].toUpperCase())
+    .join("");
+};
+
+/**
+ * Get a full name from a user's profile
+ * @param authUser - The user's profile
+ * @returns The full name
+ */
+export const getFullNameFromProfile = (authUser: UserProfile | null) => {
+  const given = authUser?.displayName?.givenName || "";
+  const family = authUser?.displayName?.familyName || "";
+  return `${given} ${family}`.trim();
+};
+
+/**
+ * Get a URL for a user's avatar
+ * @param photoURL - The user's photo URL
+ * @returns The avatar URL
+ */
+export const getAvatarFallbackURL = (fullName: string) => {
+  if (!fullName || fullName.trim().length === 0) {
+    return "https://api.dicebear.com/7.x/initials/svg?seed=U";
+  }
+
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${getInitials(
+    fullName
+  )}`;
 };

@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 
 export default function AppLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen
         name="index"
         options={{
@@ -21,8 +21,9 @@ export default function AppLayout() {
       <Stack.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: "Profile - Stack",
           headerShown: true,
+          headerLargeTitle: true,
         }}
       />
     </Stack>

@@ -12,18 +12,16 @@ export default function AppLayout() {
         redirect={true}
       />
       <Stack.Screen
-        name="home"
+        name="(tabs)"
         options={{
-          title: "Home",
-          headerShown: true,
+          headerShown: false,
         }}
       />
       <Stack.Screen
-        name="profile"
+        name="(modals)"
         options={{
-          title: "Profile - Stack",
-          headerShown: true,
-          headerLargeTitle: true,
+          presentation: "modal",
+          headerShown: false,
         }}
       />
     </Stack>

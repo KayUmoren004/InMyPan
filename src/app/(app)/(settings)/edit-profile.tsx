@@ -155,8 +155,6 @@ export default function EditProfile() {
     }
   }, [getPermission, setValue]);
 
-  console.log(watch());
-
   const takePhoto = useCallback(async () => {
     try {
       const cameraStatus = await getCameraPermission();

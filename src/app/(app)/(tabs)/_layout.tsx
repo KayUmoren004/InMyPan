@@ -38,13 +38,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="add"
+        name="add-placeholder"
         options={{
           title: "Add",
-          // tabBarIcon: ({ color }) => <Plus color={color} />,
           tabBarButton: () => (
             <Pressable
-              onPress={() => console.log("Main")}
+              onPress={() => push("/capture-modal")}
               className="flex-1 flex items-center justify-center"
             >
               <View className="p-2 bg-primary rounded-full flex items-center justify-center size-10">

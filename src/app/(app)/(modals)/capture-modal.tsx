@@ -31,6 +31,7 @@ import { Image } from "expo-image";
 import { SendHorizontal } from "@/lib/icons/send-horizontal";
 import { Trash } from "@/lib/icons/trash";
 import * as Location from "expo-location";
+import { useUploadPostImage } from "@/hooks/use-upload-image";
 
 // Back Cameras
 const DEFAULT_BACK_LENS = "Back Camera";
@@ -101,6 +102,7 @@ async function getAddress(lat: number, lon: number): Promise<Address> {
 
 export default function CaptureModal() {
   const isPresented = router.canGoBack();
+  const { uploadPostImage } = useUploadPostImage();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [location, setLocation] = useState<Location.LocationObject | null>(
@@ -262,9 +264,11 @@ export default function CaptureModal() {
               {/* Send button */}
               <TouchableOpacity
                 className="flex-row items-center justify-center gap-2"
-                onPress={() => {
+                onPress={async () => {
                   // TODO: Implement send functionality
-                  safeLog("info", "Send button pressed");
+                  // safeLog("info", "Send button pressed");
+                  const url = await uploadPostImage(uri || "");
+                  console.log(url);
                 }}
               >
                 <SendHorizontal className="text-foreground" size={48} />

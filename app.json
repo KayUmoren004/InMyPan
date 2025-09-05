@@ -52,6 +52,12 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
           "recordAudioAndroid": true
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
       ]
     ],
     "name": "InMyPan",
@@ -69,7 +75,10 @@
     "ios": {
       "bundleIdentifier": "com.godsonumoren.InMyPan",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "InMyPan needs your location to provide relevant features.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "InMyPan uses your location to provide continuous updates even when in the background.",
+        "UIBackgroundModes": ["location"]
       },
       "icon": {
         "dark": "./src/assets/images/ios-dark.png",
@@ -78,7 +87,6 @@
       },
       "usesAppleSignIn": true,
       "runtimeVersion": "1.0.0",
-      "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "googleSignIn": {
           "reservedClientId": "com.googleusercontent.apps.450510448545-4pa5ed3kqdddocmn32tgb2ms6k0qbddu"

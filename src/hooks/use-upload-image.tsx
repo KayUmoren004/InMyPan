@@ -28,7 +28,7 @@ export const useUploadPostImage = () => {
         Alert.alert("Error", "Failed to post");
       }
     },
-    [uid]
+    [uid, uploadFile]
   );
 
   return { uploadPostImage };

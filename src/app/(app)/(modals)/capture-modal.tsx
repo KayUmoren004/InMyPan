@@ -265,10 +265,7 @@ export default function CaptureModal() {
               <TouchableOpacity
                 className="flex-row items-center justify-center gap-2"
                 onPress={async () => {
-                  // TODO: Implement send functionality
-                  // safeLog("info", "Send button pressed");
                   const url = await uploadPostImage(uri || "");
-                  console.log(url);
                 }}
               >
                 <SendHorizontal className="text-foreground" size={48} />

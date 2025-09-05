@@ -17,7 +17,7 @@ import {
   CameraMode,
 } from "expo-camera";
 import { useIsomorphicLayoutEffect } from "@/lib/use-isomorphic-layout-effect";
-import { safeLog } from "@/lib/utils";
+import { cn, safeLog } from "@/lib/utils";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera } from "@/lib/icons/camera";
 import { Circle } from "@/lib/icons/circle";
@@ -25,10 +25,16 @@ import { CircleDot } from "@/lib/icons/circle-dot";
 import { Zap } from "@/lib/icons/zap";
 import { ZapOff } from "@/lib/icons/zap-off";
 import { RefreshCcw } from "@/lib/icons/refresh-ccw";
+import { Maximize2 } from "@/lib/icons/maximize-2";
 
-const DEFAULT_LENS = "Back Camera";
+// Back Cameras
+const DEFAULT_BACK_LENS = "Back Camera";
 const POINT_FIVE_LENS = "Back Ultra Wide Camera";
 const TELEPHOTO_LENS = "Back Telephoto Camera";
+
+// Front Cameras
+const DEFAULT_FRONT_LENS = "Front Camera";
+const FRONT_TRUE_DEPTH_LENS = "Front TrueDepth Camera";
 
 export default function CaptureModal() {
   const isPresented = router.canGoBack();
@@ -41,7 +47,7 @@ export default function CaptureModal() {
   const [enableTorch, setEnableTorch] = useState<boolean>(false);
   const [mode, setMode] = useState<CameraMode>("picture");
   const [lenses, setLenses] = useState<string[]>([]);
-  const [selectedLens, setSelectedLens] = useState<string>(DEFAULT_LENS);
+  const [selectedLens, setSelectedLens] = useState<string>(DEFAULT_BACK_LENS);
 
   useIsomorphicLayoutEffect(() => {
     requestPermission();
@@ -63,8 +69,6 @@ export default function CaptureModal() {
     }
   };
 
-  console.log("lenses", lenses);
-
   if (!permission) {
     safeLog("info", "Camera permissions are still loading.");
     // Camera permissions are still loading.
@@ -85,6 +89,7 @@ export default function CaptureModal() {
               style={{ flex: 1, width: "100%" }}
               ref={cameraRef}
               selectedLens={selectedLens}
+              enableTorch={enableTorch}
             />
             <View className=" w-full absolute bottom-1 px-4 py-2">
               <CameraControls
@@ -147,47 +152,77 @@ const CameraControls = ({
   setSelectedLens,
 }: CameraControlsProps) => {
   const switchLens = useCallback(
-    (currentLens: string) => {
-      if (currentLens === DEFAULT_LENS) {
-        setSelectedLens(POINT_FIVE_LENS);
+    (currentLens: string, facing: CameraType) => {
+      if (facing === "back") {
+        if (currentLens === DEFAULT_BACK_LENS) {
+          setSelectedLens(POINT_FIVE_LENS);
+        } else {
+          setSelectedLens(DEFAULT_BACK_LENS);
+        }
       } else {
-        setSelectedLens(DEFAULT_LENS);
+        if (currentLens === DEFAULT_FRONT_LENS) {
+          setSelectedLens(FRONT_TRUE_DEPTH_LENS);
+        } else {
+          setSelectedLens(DEFAULT_FRONT_LENS);
+        }
       }
     },
     [lenses, setSelectedLens]
   );
 
+  const switchCameraFacing = useCallback(() => {
+    setFacing((current) => (current === "back" ? "front" : "back"));
+    setSelectedLens((current) =>
+      current === DEFAULT_BACK_LENS ? DEFAULT_FRONT_LENS : DEFAULT_BACK_LENS
+    );
+  }, [setFacing, setSelectedLens]);
+
   const staticLensLabelMap: Record<string, string> = {
     [POINT_FIVE_LENS]: "0.5x",
-    [DEFAULT_LENS]: "1x",
+    [DEFAULT_BACK_LENS]: "1x",
   };
 
   return (
-    <View className="flex-1 items-center justify-between w-full flex-row">
+    <View className="flex-1 items-center justify-between w-full flex-row h-10">
       {/* Left */}
       <View className="flex-1 items-start">
-        {enableTorch ? (
-          <Zap className="text-foreground" />
-        ) : (
-          <ZapOff className="text-foreground" />
-        )}
+        <Pressable
+          onPress={() => setEnableTorch(!enableTorch)}
+          className={cn(facing === "front" && "hidden")}
+        >
+          {enableTorch ? (
+            <Zap className="text-foreground" />
+          ) : (
+            <ZapOff className="text-foreground" />
+          )}
+        </Pressable>
       </View>
 
       {/* Center */}
       <View className="flex-1 items-center shrink-0 justify-center">
         <Pressable
-          className="flex-row items-center justify-center bg-muted/30 p-2 rounded-full min-w-10 min-h-10 shrink-0 flex-1"
-          onPress={() => switchLens(selectedLens)}
+          className={cn(
+            "flex-row items-center justify-center bg-muted/30 p-2 rounded-full min-w-10 min-h-10 shrink-0 flex-1",
+            facing === "front" && "hidden"
+          )}
+          onPress={() => switchLens(selectedLens, facing)}
         >
-          <Text className="text-foreground text-sm text-center">
-            {staticLensLabelMap[selectedLens]}
-          </Text>
+          {facing === "back" && (
+            <Text className="text-foreground text-sm text-center">
+              {staticLensLabelMap[selectedLens]}
+            </Text>
+          )}
+          {facing === "front" && (
+            <Maximize2 className="text-foreground" size={18} />
+          )}
         </Pressable>
       </View>
 
       {/* Right */}
       <View className="flex-1 items-end">
-        <RefreshCcw className="text-foreground" />
+        <Pressable onPress={switchCameraFacing}>
+          <RefreshCcw className="text-foreground" />
+        </Pressable>
       </View>
     </View>
   );

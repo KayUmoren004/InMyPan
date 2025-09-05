@@ -352,7 +352,7 @@ const CameraControls = ({
         }
       }
     },
-    [lenses, setSelectedLens]
+    [setSelectedLens]
   );
 
   const switchCameraFacing = useCallback(() => {

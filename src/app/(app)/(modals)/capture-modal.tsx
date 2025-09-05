@@ -92,12 +92,27 @@ function shortenRoadName(road: string): string {
 }
 
 async function getAddress(lat: number, lon: number): Promise<Address> {
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
-  );
-  const data = await response.json();
-
-  return data.address as Address;
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+    );
+    if (!response.ok) {
+      throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data.address as Address;
+  } catch (error) {
+    safeLog("Failed to fetch address:", error);
+    // Return a default Address object or rethrow, depending on desired behavior
+    return {
+      road: "",
+      town: "",
+      county: "",
+      state: "",
+      postcode: "",
+      country: "",
+    };
+  }
 }
 
 export default function CaptureModal() {

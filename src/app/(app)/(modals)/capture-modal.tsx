@@ -102,7 +102,7 @@ async function getAddress(lat: number, lon: number): Promise<Address> {
     const data = await response.json();
     return data.address as Address;
   } catch (error) {
-    safeLog("Failed to fetch address:", error);
+    safeLog("error", "Failed to fetch address:", error);
     // Return a default Address object or rethrow, depending on desired behavior
     return {
       road: "",

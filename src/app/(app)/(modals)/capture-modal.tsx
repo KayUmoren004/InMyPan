@@ -91,28 +91,57 @@ function shortenRoadName(road: string): string {
   return result;
 }
 
+// Simple sleep helper for retry delays
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Simple rate limiter: allow one request per second
+let lastRequestTime = 0;
 async function getAddress(lat: number, lon: number): Promise<Address> {
-  try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
-    );
-    if (!response.ok) {
-      throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 1000;
+  let attempt = 0;
+  while (attempt < MAX_RETRIES) {
+    // Rate limiting: ensure at least 1 second between requests
+    const now = Date.now();
+    const timeSinceLast = now - lastRequestTime;
+    if (timeSinceLast < 1000) {
+      await sleep(1000 - timeSinceLast);
     }
-    const data = await response.json();
-    return data.address as Address;
-  } catch (error) {
-    safeLog("error", "Failed to fetch address:", error);
-    // Return a default Address object or rethrow, depending on desired behavior
-    return {
-      road: "",
-      town: "",
-      county: "",
-      state: "",
-      postcode: "",
-      country: "",
-    };
+    lastRequestTime = Date.now();
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+      );
+      if (!response.ok) {
+        throw new Error(
+          `Network response was not ok: ${response.status} ${response.statusText}`
+        );
+      }
+      const data = await response.json();
+      return data.address as Address;
+    } catch (error) {
+      safeLog(
+        "error",
+        `Failed to fetch address (attempt ${attempt + 1}):`,
+        error
+      );
+      attempt++;
+      if (attempt < MAX_RETRIES) {
+        await sleep(RETRY_DELAY_MS * attempt); // Exponential backoff
+      }
+    }
   }
+  // After retries, return default Address object
+  return {
+    road: "",
+    town: "",
+    county: "",
+    state: "",
+    postcode: "",
+    country: "",
+  };
 }
 
 export default function CaptureModal() {

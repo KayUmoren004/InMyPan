@@ -7,8 +7,6 @@ export default function Home() {
   const { authUser, updateProfile, logout, linkGoogleAccount } =
     useEnhancedAuth();
 
-  safeLog("log", "Home screen loaded");
-
   return (
     <View className="flex-1 items-center justify-center">
       <Text className="text-2xl font-bold">Home</Text>

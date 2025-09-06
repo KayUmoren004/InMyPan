@@ -20,6 +20,7 @@ interface FirestoreContextType {
     docId: string
   ) => Promise<T | null>;
   getCollection: <T = DocumentData>(collectionName: string) => Promise<T[]>;
+  getSubCollection: <T = DocumentData>(paths: string[]) => Promise<T[]>;
   setDocument: <T = DocumentData>(
     collectionName: string,
     docId: string,
@@ -58,6 +59,7 @@ export const FirestoreProvider = ({
         const docSnap = await getDoc(docRef);
         return docSnap.exists() ? (docSnap.data() as T) : null;
       },
+
       getCollection: async <T = DocumentData,>(
         collectionName: string
       ): Promise<T[]> => {
@@ -68,6 +70,18 @@ export const FirestoreProvider = ({
           (doc) => ({ id: doc.id, ...doc.data() } as T)
         );
       },
+
+      getSubCollection: async <T = DocumentData,>(
+        paths: string[]
+      ): Promise<T[]> => {
+        const querySnapshot = await getDocs(
+          collection(firestore, paths.map((s) => `"${s}"`).join(", "))
+        );
+        return querySnapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as T)
+        );
+      },
+
       setDocument: async <T = DocumentData,>(
         collectionName: string,
         docId: string,

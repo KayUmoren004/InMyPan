@@ -40,10 +40,6 @@ export function AuthNavigationHandler() {
     // Wait for both loading and initializing to complete
     if (loading) return;
 
-    safeLog("log", "Auth navigation handler initialized");
-    safeLog("log", "Checking navigation path");
-    safeLog("log", "Navigation state check");
-
     // Create a unique key for the current auth state
     const currentAuthState = authUser
       ? `${authUser.id}-${hasCompleteName(authUser)}`

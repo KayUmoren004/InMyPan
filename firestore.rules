@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // USER PROFILES: /users/{userId}
+    match /users/{userId} {
+      // Any authenticated user can read public profiles
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+
+      // Only the owner can create or update their own profile
+      allow create, update: if isOwner(userId);
+      
+      // No one can delete a user profile document through client requests
+      allow delete: if false;
+
+      // FRIENDS SUBCOLLECTION: /users/{userId}/friends/{friendId}
+      match /friends/{friendId} {
+        // Owner can read their own friends list
+        allow read: if isOwner(userId);
+
+        // Allow creation if:
+        // 1. The user is the owner of the friends list AND the request is a "pending" request they initiated.
+        // 2. The user is the target of the friend request.
+        allow create: if (isOwner(userId) && request.resource.data.status == "pending" && request.resource.data.initiatedBy == request.auth.uid)
+                      || (request.auth.uid == friendId && request.resource.data.status == "pending");
+
+        // Allow owner to update status (e.g., to "accepted" or "blocked")
+        // The other user (the one who initiated) cannot change the status.
+        allow update: if isOwner(userId) && request.resource.data.status in ["accepted", "blocked"];
+        
+        // Either party can delete the relationship (unfriend/cancel)
+        allow delete: if isOwner(userId) || isOwner(friendId);
+
+        // --- Field Validation for Friends Subcollection ---
+        // Ensure that friend documents have the correct fields and types.
+        allow write: if request.resource.data.keys().hasAll(['friendId', 'status', 'initiatedBy', 'since'])
+                      && request.resource.data.friendId is string
+                      && request.resource.data.friendId == friendId
+                      && request.resource.data.status is string
+                      && request.resource.data.status in ["pending", "accepted", "blocked"]
+                      && request.resource.data.initiatedBy is string
+                      && request.resource.data.since is timestamp;
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "searchableAttributes": [
+    "displayName",
+    "givenName",
+    "familyName",
+    "username"
+  ],
+  "attributesForFaceting": [
+    "filterOnly(isSearchable)"
+  ],
+  "typoTolerance": true,
+  "attributesToRetrieve": [
+    "displayName",
+    "givenName",
+    "familyName",
+    "username",
+    "avatarUrl"
+  ]
+}

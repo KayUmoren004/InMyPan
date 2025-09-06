@@ -1,27 +1,27 @@
-/**
- * Transform Firestore user doc before pushing to Algolia.
- * This gets called by the Search with Algolia extension.
- * @param {any} snapshot - The snapshot of the document.
- * @param {any} context - The context of the document.
- * @return {object} The transformed document.
- */
-exports.transformRecord = (snapshot: any, context: any) => {
-  const data = snapshot.data();
-  const objectID = snapshot.id; // required for Algolia
 
-  // Flatten displayName if it's a map
-  let displayName = "";
-  if (data.displayName) {
-    const given = data.displayName.givenName || "";
-    const family = data.displayName.familyName || "";
-    displayName = `${given} ${family}`.trim();
+import { DocumentSnapshot } from "firebase-functions/v1/firestore";
+
+// This function is used by the Firebase "Search with Algolia" extension.
+// It transforms a Firestore document snapshot into a record for Algolia.
+export const transformRecord = (snapshot: DocumentSnapshot) => {
+  const data = snapshot.data();
+
+  if (!data || !data.isSearchable) {
+    return null; // Do not index users with isSearchable set to false or undefined
   }
 
+  // Flatten the displayName map
+  const displayName = (data.displayName && data.displayName.givenName && data.displayName.familyName)
+    ? `${data.displayName.givenName} ${data.displayName.familyName}`
+    : "";
+
   return {
-    objectID,
-    ...data, // keep other fields
-    displayName, // new flattened field
-    givenName: data.displayName?.givenName || null,
-    familyName: data.displayName?.familyName || null,
+    objectID: snapshot.id,
+    displayName,
+    givenName: data.displayName?.givenName || "",
+    familyName: data.displayName?.familyName || "",
+    username: data.username || "",
+    avatarUrl: data.avatarUrl || "",
+    isSearchable: data.isSearchable,
   };
 };

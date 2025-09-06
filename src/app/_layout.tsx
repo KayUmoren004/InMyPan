@@ -18,6 +18,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthWrapper } from "@/components/auth/auth-wrapper";
 import { AuthNavigationHandler } from "@/components/auth/auth-navigation-handler";
 import { DeepLinkingProvider } from "@/hooks/contexts/use-deep-linking-handler";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -102,12 +103,15 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  const queryClient = new QueryClient();
+
   if (!isColorSchemeLoaded || (!fontsLoaded && !fontError)) {
     return null;
   }
 
   return (
-    <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
       <SafeAreaProvider>
         <DeepLinkingProvider>
           <AuthWrapper>
@@ -118,8 +122,9 @@ export default function RootLayout() {
             <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
           </AuthWrapper>
         </DeepLinkingProvider>
-      </SafeAreaProvider>
-    </ThemeProvider>
+        </SafeAreaProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

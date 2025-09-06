@@ -169,7 +169,7 @@ export default function CaptureModal() {
         const lenses = await cameraRef.current.getAvailableLensesAsync();
         setLenses(lenses);
       } catch (error) {
-        safeLog("error", "Error getting active lens");
+        safeLog("error", `Error getting active lens: ${error}`);
       }
     }
   };

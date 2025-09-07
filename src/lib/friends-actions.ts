@@ -1,11 +1,15 @@
-
 import { firestore } from "./firebase-config";
-import { doc, writeBatch, serverTimestamp, runTransaction } from "firebase/firestore";
+import {
+  doc,
+  writeBatch,
+  serverTimestamp,
+  runTransaction,
+} from "firebase/firestore";
 
-const auth = { currentUser: { uid: "test-user" } }; // Replace with your actual auth instance
+// TODO: Implement Sending Notifications
 
-export const sendFriendRequest = async (themId: string) => {
-  const meId = auth.currentUser.uid;
+export const sendFriendRequest = async (meId: string, themId: string) => {
+  console.log("Sending friend request from ", meId, " to ", themId);
   const batch = writeBatch(firestore);
 
   const myFriendRef = doc(firestore, `users/${meId}/friends/${themId}`);
@@ -28,9 +32,7 @@ export const sendFriendRequest = async (themId: string) => {
   await batch.commit();
 };
 
-export const acceptFriendRequest = async (themId: string) => {
-  const meId = auth.currentUser.uid;
-  
+export const acceptFriendRequest = async (meId: string, themId: string) => {
   await runTransaction(firestore, async (transaction) => {
     const myFriendRef = doc(firestore, `users/${meId}/friends/${themId}`);
     const theirFriendRef = doc(firestore, `users/${themId}/friends/${meId}`);
@@ -41,7 +43,12 @@ export const acceptFriendRequest = async (themId: string) => {
 };
 
 // Similar functions for cancel, unfriend, and block
-export const cancelFriendRequest = async (themId: string) => { /* ... */ };
-export const unfriend = async (themId: string) => { /* ... */ };
-export const blockFriend = async (themId: string) => { /* ... */ };
-
+export const cancelFriendRequest = async (themId: string) => {
+  /* ... */
+};
+export const unfriend = async (themId: string) => {
+  /* ... */
+};
+export const blockFriend = async (themId: string) => {
+  /* ... */
+};

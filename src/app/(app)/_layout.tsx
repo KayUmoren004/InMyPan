@@ -22,7 +22,7 @@ export default function AppLayout() {
         <Stack.Screen
           name="(modals)"
           options={{
-            presentation: "fullScreenModal",
+            presentation: "modal",
             headerShown: false,
           }}
         />

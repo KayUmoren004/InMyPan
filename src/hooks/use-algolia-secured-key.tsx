@@ -1,9 +1,8 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../../lib/firebase-config"; // You'll need to export your initialized functions instance
+import { functions } from "@/lib/firebase-config";
 
-const getAlgoliaSecuredKey = httpsCallable(functions, 'getAlgoliaSecuredKey');
+const getAlgoliaSecuredKey = httpsCallable(functions, "getAlgoliaSecuredKey");
 
 export const useSecuredSearchKey = () => {
   return useQuery({

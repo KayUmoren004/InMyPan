@@ -88,10 +88,7 @@ export default function TabLayout() {
             </View>
           ),
           headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => push("/add-user")}
-              className="ml-4"
-            >
+            <TouchableOpacity onPress={() => push("/search")} className="ml-4">
               <UserRoundPlus className="size-4 text-foreground" />
             </TouchableOpacity>
           ),

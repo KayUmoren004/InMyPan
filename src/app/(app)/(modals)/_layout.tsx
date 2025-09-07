@@ -11,23 +11,23 @@ export default function ModalLayout() {
         presentation: "modal",
         headerShown: true,
         headerShadowVisible: false,
+        headerTitle: ({}) => (
+          <Text className="text-2xl font-extrabold text-primary font-mono">
+            InMyPan
+          </Text>
+        ),
+        headerLeft: () => (
+          <Pressable onPress={() => router.back()}>
+            <X size={20} className="text-foreground" />
+          </Pressable>
+        ),
       }}
     >
       <Stack.Screen
         name="capture-modal"
-        options={{
-          headerTitle: ({}) => (
-            <Text className="text-2xl font-extrabold text-primary font-mono">
-              InMyPan
-            </Text>
-          ),
-          headerLeft: () => (
-            <Pressable onPress={() => router.back()}>
-              <X size={20} className="text-foreground" />
-            </Pressable>
-          ),
-        }}
+        options={{ presentation: "fullScreenModal" }}
       />
+      <Stack.Screen name="search" />
     </Stack>
   );
 }

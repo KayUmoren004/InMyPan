@@ -1,3 +1,5 @@
+/* eslint-disable operator-linebreak */
+/* eslint-disable object-curly-spacing */
 
 import { DocumentSnapshot } from "firebase-functions/v1/firestore";
 
@@ -7,13 +9,16 @@ export const transformRecord = (snapshot: DocumentSnapshot) => {
   const data = snapshot.data();
 
   if (!data || !data.isSearchable) {
-    return null; // Do not index users with isSearchable set to false or undefined
+    return null;
   }
 
   // Flatten the displayName map
-  const displayName = (data.displayName && data.displayName.givenName && data.displayName.familyName)
-    ? `${data.displayName.givenName} ${data.displayName.familyName}`
-    : "";
+  const displayName =
+    data.displayName &&
+    data.displayName.givenName &&
+    data.displayName.familyName
+      ? `${data.displayName.givenName} ${data.displayName.familyName}`
+      : "";
 
   return {
     objectID: snapshot.id,

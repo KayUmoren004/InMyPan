@@ -56,6 +56,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { type Firestore, getFirestore } from "firebase/firestore";
 import { type FirebaseStorage, getStorage } from "firebase/storage";
 import { type Database, getDatabase } from "firebase/database";
+import { Functions, getFunctions } from "firebase/functions";
 import { safeLog } from "@/lib/utils";
 
 export const firebaseConfig = {
@@ -94,6 +95,6 @@ const auth: Auth = (() => {
 const firestore: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 const realtime: Database = getDatabase(app);
-
-export { app, auth, firestore, storage, realtime };
+const functions: Functions = getFunctions(app);
+export { app, auth, firestore, storage, realtime, functions as functions };
 export default app;

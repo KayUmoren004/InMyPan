@@ -1,16 +1,30 @@
-
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import algoliasearch from "algoliasearch/lite";
+import {
+  liteClient as algoliasearch,
+  Hit,
+  SearchResponse,
+} from "algoliasearch/lite";
 import { useSecuredSearchKey } from "./use-algolia-secured-key";
-import { firestore } from "../../lib/firebase-config";
-import { collection, query, where, getDocs, orderBy, limit, startAt, endAt } from "firebase/firestore";
-import { UserProfile } from "../../components/types/user-types";
+import { firestore } from "@/lib/firebase-config";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+  startAt,
+  endAt,
+} from "firebase/firestore";
+import { UserProfile } from "@/components/types/user-types";
+import { useUser } from "./contexts/use-user";
+import { useFirestore } from "./contexts/firebase/use-firestore";
 
-const useDebounce = <T>(value: T, delay: number): T => {
+const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-  useState(() => {
+  useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
@@ -18,18 +32,23 @@ const useDebounce = <T>(value: T, delay: number): T => {
     return () => {
       clearTimeout(handler);
     };
-  });
+  }, [value, delay]);
 
   return debouncedValue;
 };
 
 export const useUserSearch = (searchQuery: string, friendIds: Set<string>) => {
+  const { user } = useUser();
+  const { getDocument } = useFirestore();
   const debouncedQuery = useDebounce(searchQuery, 300);
   const { data: securedKey, error: keyError } = useSecuredSearchKey();
 
   const algoliaClient = useMemo(() => {
     if (securedKey?.key) {
-      return algoliasearch("YOUR_ALGOLIA_APP_ID", securedKey.key);
+      return algoliasearch(
+        process.env.EXPO_PUBLIC_ALGOLIA_APP_ID || "",
+        process.env.EXPO_PUBLIC_ALGOLIA_API_KEY || ""
+      );
     }
     return null;
   }, [securedKey]);
@@ -38,11 +57,23 @@ export const useUserSearch = (searchQuery: string, friendIds: Set<string>) => {
     if (!algoliaClient || !debouncedQuery) {
       return [];
     }
-    const index = algoliaClient.initIndex("users");
-    const { hits } = await index.search<UserProfile>(debouncedQuery, {
-      hitsPerPage: 20,
+    const { results } = await algoliaClient.search<UserProfile>({
+      requests: [
+        {
+          indexName: "fb_SEARCH",
+          query: debouncedQuery,
+          hitsPerPage: 20,
+        },
+      ],
     });
-    return hits.filter((hit) => !friendIds.has(hit.objectID));
+
+    const hits = (results[0] as SearchResponse<UserProfile>)
+      ?.hits as Hit<UserProfile>[];
+
+    return hits.filter(
+      (hit: Hit<UserProfile>) =>
+        !friendIds.has(hit.objectID) && hit.objectID !== user?.id
+    );
   };
 
   const firestoreSearch = async () => {
@@ -52,7 +83,7 @@ export const useUserSearch = (searchQuery: string, friendIds: Set<string>) => {
 
     const usernameQuery = query(
       collection(firestore, "users"),
-      orderBy("username_lower"),
+      orderBy("username"),
       startAt(debouncedQuery.toLowerCase()),
       endAt(debouncedQuery.toLowerCase() + "\uf8ff"),
       limit(10)
@@ -60,7 +91,7 @@ export const useUserSearch = (searchQuery: string, friendIds: Set<string>) => {
 
     const displayNameQuery = query(
       collection(firestore, "users"),
-      orderBy("displayName_lower"),
+      orderBy("displayName"),
       startAt(debouncedQuery.toLowerCase()),
       endAt(debouncedQuery.toLowerCase() + "\uf8ff"),
       limit(10)
@@ -79,7 +110,7 @@ export const useUserSearch = (searchQuery: string, friendIds: Set<string>) => {
           results.set(doc.id, { ...data, id: doc.id });
         }
       });
-    }
+    };
 
     processSnap(usernameSnap);
     processSnap(displayNameSnap);
@@ -87,9 +118,27 @@ export const useUserSearch = (searchQuery: string, friendIds: Set<string>) => {
     return Array.from(results.values());
   };
 
+  const getUserProfiles = async (profiles: Hit<UserProfile>[]) => {
+    const userProfiles = await Promise.all(
+      profiles.map(async (profile) => {
+        const userProfile = await getDocument("users", profile.objectID);
+        return userProfile;
+      })
+    );
+
+    return userProfiles;
+  };
+
   return useQuery({
     queryKey: ["user-search", debouncedQuery],
-    queryFn: algoliaClient ? algoliaSearch : firestoreSearch,
+    queryFn: async () => {
+      const profiles = algoliaClient
+        ? await algoliaSearch()
+        : await firestoreSearch();
+      return (await getUserProfiles(
+        profiles as Hit<UserProfile>[]
+      )) as UserProfile[];
+    },
     enabled: !!debouncedQuery,
   });
 };

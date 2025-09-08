@@ -37,7 +37,6 @@ export const useFriends = () => {
             ...doc.data(),
           }));
 
-          console.log("Friends data updated:", friendsData);
           setFriends(friendsData);
           setIsLoading(false);
 

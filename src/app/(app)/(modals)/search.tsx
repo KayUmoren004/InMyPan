@@ -24,6 +24,8 @@ import { ReusableProfilePhoto } from "@/components/views/reusable-profile-photo"
 import { useUser } from "@/hooks/contexts/use-user";
 import { useEnhancedAuth } from "@/hooks/contexts/use-enhanced-auth";
 import { Search } from "@/lib/icons/search";
+import { FlashList } from "@shopify/flash-list";
+import { ShareUser } from "@/components/views/share-user";
 
 const SearchScreen = () => {
   const { user } = useUser();
@@ -32,7 +34,6 @@ const SearchScreen = () => {
   const { data: friends } = useFriends();
 
   const friendIds = useMemo(() => {
-    console.log("Computing friendIds from friends:", friends);
     return new Set(friends?.map((f: any) => f.friendId) || []);
   }, [friends]);
 
@@ -167,10 +168,11 @@ const SearchScreen = () => {
     <View className="flex-1">
       <View className="relative m-4 overflow-visible">
         <Input
-          placeholder="Search for users..."
+          placeholder="Add or search friends..."
           value={query}
           onChangeText={setQuery}
           className="pl-10"
+          clearButtonMode="while-editing"
         />
         <View className="absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
           <Search className="text-muted-foreground" size={16} />
@@ -178,10 +180,13 @@ const SearchScreen = () => {
       </View>
       {isLoading && <ActivityIndicator />}
       {isError && <Text>Error searching for users.</Text>}
-      <FlatList
+      <FlashList
         data={users}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
+        estimatedItemSize={100}
+        ListHeaderComponent={() => <ShareUser />}
+        className="mx-4"
       />
     </View>
   );

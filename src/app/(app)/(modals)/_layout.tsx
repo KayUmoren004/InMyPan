@@ -2,6 +2,7 @@ import { router, Stack, useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { Pressable } from "react-native";
 import { X } from "@/lib/icons/x";
+import * as Haptics from "expo-haptics";
 
 export default function ModalLayout() {
   const { back } = useRouter();
@@ -17,7 +18,12 @@ export default function ModalLayout() {
           </Text>
         ),
         headerLeft: () => (
-          <Pressable onPress={() => router.back()}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.back();
+            }}
+          >
             <X size={20} className="text-foreground" />
           </Pressable>
         ),

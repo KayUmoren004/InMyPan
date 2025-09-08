@@ -70,10 +70,7 @@ export const useUserSearch = (searchQuery: string, friendIds: Set<string>) => {
     const hits = (results[0] as SearchResponse<UserProfile>)
       ?.hits as Hit<UserProfile>[];
 
-    return hits.filter(
-      (hit: Hit<UserProfile>) =>
-        !friendIds.has(hit.objectID) && hit.objectID !== user?.id
-    );
+    return hits.filter((hit: Hit<UserProfile>) => hit.objectID !== user?.id);
   };
 
   const firestoreSearch = async () => {

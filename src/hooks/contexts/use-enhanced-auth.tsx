@@ -54,6 +54,7 @@ interface EnhancedAuthContextType {
   ) => Promise<UserCredential | null>;
   verifyEmail: () => Promise<void>;
   completeProfile: (profile: CompleteProfileSchema) => Promise<void>;
+  refetchAuthUser: () => Promise<void>;
 }
 
 const EnhancedAuthContext = createContext<EnhancedAuthContextType | undefined>(
@@ -610,6 +611,15 @@ export const EnhancedAuthProvider = ({
     [baseAuth.user, updateProfile, uploadProfileImage, syncUserProfile]
   );
 
+  const refetchAuthUser = useCallback(async (): Promise<void> => {
+    if (!baseAuth.user) {
+      throw new Error("No user signed in");
+    }
+
+    safeLog("log", "Refetching auth user");
+    await syncUserProfile(baseAuth.user);
+  }, [baseAuth.user, syncUserProfile]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -632,6 +642,7 @@ export const EnhancedAuthProvider = ({
     signInWithApple,
     verifyEmail,
     completeProfile,
+    refetchAuthUser,
   };
 
   return (
